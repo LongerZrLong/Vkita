@@ -1,0 +1,9 @@
+[submodule "Engine/External/glm"]
+	path = Engine/External/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "Engine/External/GLFW"]
+	path = Engine/External/GLFW
+	url = https://github.com/glfw/glfw.git
+[submodule "Engine/External/spdlog"]
+	path = Engine/External/spdlog
+	url = https://github.com/gabime/spdlog.git
