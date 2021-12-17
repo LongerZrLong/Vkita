@@ -6,6 +6,8 @@
 #include "Events/ApplicationEvent.h"
 #include "Window/Window.h"
 
+#include "Renderer/GraphicsContext.h"
+
 namespace VKT {
 
     class Application
@@ -35,6 +37,7 @@ namespace VKT {
 
     private:
         Scope<Window> m_Window;
+        Scope<GraphicsContext> m_GraphicsContext;
 
         LayerStack m_LayerStack;
 

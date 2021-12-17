@@ -1,6 +1,10 @@
 file(GLOB_RECURSE SRCS
         Core/*.cpp
+        Debug/*.cpp
         Input/*.cpp
+        Renderer/*.cpp
+        Utils/*.cpp
+        Vulkan/*.cpp
         Window/*.cpp
         )
 
@@ -22,3 +26,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC spdlog)
 # glm
 add_subdirectory(External/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
+
+# Vulkan
+find_package(Vulkan REQUIRED)
+target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan)
+
+# stb_image
+add_subdirectory(External/stb_image)
+target_link_libraries(${PROJECT_NAME} PUBLIC stb_image)

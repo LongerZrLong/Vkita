@@ -1,7 +1,9 @@
 #include "Window.h"
 
-#include "Core/Assert.h"
 #include "Core/Timestep.h"
+
+#include "Debug/Assert.h"
+
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
@@ -144,6 +146,11 @@ namespace VKT {
     {
         glfwDestroyWindow(m_Window);
         glfwTerminate();
+    }
+
+    void Window::WaitForEvents()
+    {
+        glfwWaitEvents();
     }
 
 }

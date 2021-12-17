@@ -4,9 +4,6 @@
 
 #define BIT(x) (1 << x)
 
-#define VKT_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
-
-
 namespace VKT {
 
     // Scope Pointer
@@ -29,3 +26,9 @@ namespace VKT {
         return std::make_shared<T>(std::forward<Args>(args)...);
     }
 }
+
+#define NON_COPIABLE(ClassName) \
+	ClassName(const ClassName&) = delete; \
+	ClassName(ClassName&&) = delete; \
+	ClassName &operator = (const ClassName&) = delete; \
+	ClassName &operator = (ClassName&&) = delete;

@@ -39,6 +39,8 @@ namespace VKT {
 
         void *GetNativeWindow() const { return m_Window; }
 
+        void WaitForEvents();
+
     private:
         void Init(const WindowProps &props);
         void Shutdown();
