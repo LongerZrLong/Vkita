@@ -1,22 +1,21 @@
 #include "DescriptorSetManager.h"
 
-#include "Renderer.h"
-#include "GraphicsContext.h"
 #include "DescriptorBinding.h"
 #include "UniformBuffer.h"
 #include "Texture2D.h"
+
+#include "Common/Base.h"
+#include "Common/GraphicsManager.h"
 
 #include "Vulkan/Device.h"
 #include "Vulkan/ImageView.h"
 #include "Vulkan/Sampler.h"
 
-#include "Core/Base.h"
-
 namespace VKT {
 
     DescriptorSetManager::DescriptorSetManager(const std::vector<DescriptorBinding> &descriptorBindings, const size_t maxSets)
     {
-        const Vulkan::Device &device = Renderer::GetGraphicsContext().GetDevice();
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
 
         m_DescriptorPool = CreateScope<Vulkan::DescriptorPool>(device, descriptorBindings, maxSets);
         m_DescriptorSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(device, descriptorBindings);

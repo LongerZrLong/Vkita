@@ -3,10 +3,10 @@
 #include <string>
 #include <utility>
 
-#include "Base.h"
-#include "Timestep.h"
+#include "Common/Base.h"
+#include "Common/Timestep.h"
 
-#include "Events/Event.h"
+#include "Event.h"
 
 namespace VKT {
 

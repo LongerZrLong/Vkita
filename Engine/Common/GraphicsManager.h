@@ -4,54 +4,60 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Core/Base.h"
+#include "Common/Base.h"
+
+#include "Interface/IRuntimeModule.h"
+
+#include "Vulkan/Instance.h"
+#include "Vulkan/DebugUtilsMessenger.h"
+#include "Vulkan/Device.h"
+#include "Vulkan/Surface.h"
+#include "Vulkan/SwapChain.h"
+#include "Vulkan/FrameBuffer.h"
+#include "Vulkan/DepthBuffer.h"
+#include "Vulkan/CommandPool.h"
+#include "Vulkan/CommandBuffers.h"
+#include "Vulkan/RenderPass.h"
+#include "Vulkan/Enumerate.h"
+#include "Vulkan/Version.h"
+#include "Vulkan/Strings.h"
+
+// Temporary
+#include "Renderer/GraphicsPipeline.h"
+#include "Renderer/Buffer.h"
+#include "Renderer/Texture2D.h"
+#include "Renderer/UniformBuffer.h"
+#include "Renderer/DescriptorBinding.h"
 
 namespace VKT {
 
-    const int MAX_FRAMES_IN_FLIGHT = 2;
-
-    namespace Vulkan {
-        class Instance;
-        class DebugUtilsMessenger;
-        class Device;
-        class Surface;
-        class SwapChain;
-        class FrameBuffer;
-        class DepthBuffer;
-        class CommandPool;
-        class CommandBuffers;
-        class RenderPass;
-    }
-
-    class Window;
-
-    class GraphicsContext
+    class GraphicsManager : public IRuntimeModule
     {
     public:
-        NON_COPIABLE(GraphicsContext);
+        GraphicsManager() = default;
+        ~GraphicsManager() override = default;
 
-        GraphicsContext(Window &window, VkPresentModeKHR presentMode, bool enableValidationLayers);
-        ~GraphicsContext();
+        int Initialize() override;
+        void ShutDown() override;
+
+        void Tick() override;
+
+        void Draw();
 
         const Vulkan::Device &GetDevice() const { return *m_Device; }
-
+        const Vulkan::SwapChain &GetSwapChain() const { return *m_SwapChain; }
+        const Vulkan::CommandPool &GetCommandPool() const { return *m_CommandPool; }
         const Vulkan::RenderPass &GetRenderPass() const { return *m_RenderPass; }
 
-        const Vulkan::SwapChain &GetSwapChain() const { return *m_SwapChain; }
+    private:
+        bool BeginFrame();
+        void EndFrame();
 
-        const Vulkan::FrameBuffer &GetFrameBuffer(size_t i) const { return *m_FrameBuffers[i]; };
-
-        const Vulkan::CommandPool &GetCommandPool() const { return *m_CommandPool; }
-        const Vulkan::CommandBuffers &GetCommandBuffers() const { return *m_CommandBuffers; }
-
-        const Vulkan::DepthBuffer &GetDepthBuffer() const { return *m_DepthBuffer; }
-
-        uint32_t GetCurrentImageIndex() const { return m_CurrentImageIndex; }
-
-        bool DrawFrameBegin();
-        void DrawFrameEnd();
+        void Present();
 
         void DeviceWaitIdle();
+
+        void LogVulkanInfo();
 
     private:
         void CreateDevice();
@@ -63,8 +69,6 @@ namespace VKT {
         void CreateSyncObjects();
         void DeleteSyncObjects();
 
-        void LogVulkanInfo();
-
         const std::vector<VkExtensionProperties> &GetExtensions() const;
         const std::vector<VkLayerProperties> &GetLayers() const;
         const std::vector<VkPhysicalDevice> &GetPhysicalDevices() const;
@@ -73,10 +77,6 @@ namespace VKT {
 
     private:
         friend class Renderer;
-
-        Window &m_Window;
-
-        const VkPresentModeKHR m_VkPresentMode;
 
         Scope<Vulkan::Instance> m_Instance;
         Scope<Vulkan::DebugUtilsMessenger> m_DebugUtilsMessenger;
@@ -101,5 +101,21 @@ namespace VKT {
         size_t m_CurrentFrame{};
         uint32_t m_CurrentImageIndex{};
 
+        // TODO: Delete Testing Code
+        Ref<GraphicsPipeline> m_GraphicsPipeline;
+
+        Ref<Shader> m_VertShader;
+        Ref<Shader> m_FragShader;
+
+        Ref<VertexBuffer> m_VertexBuffer;
+        Ref<IndexBuffer> m_IndexBuffer;
+
+        Ref<DescriptorSetManager> m_DescriptorSetManager;
+        Ref<UniformBuffer> m_UniformBuffer;
+        Ref<Texture2D> m_CheckerBoardTex;
+
     };
+
+    extern GraphicsManager *g_GraphicsManager;
+
 }

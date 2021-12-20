@@ -1,35 +1,32 @@
-#include "GraphicsContext.h"
+#include "GraphicsManager.h"
 
+#include "Config.h"
+
+#include "Application/Application.h"
+
+#include "Common/Log.h"
+
+// Temporary
 #include <array>
-
-#include "Window/Window.h"
-
-#include "Debug/Log.h"
-
-#include "Vulkan/Instance.h"
-#include "Vulkan/DebugUtilsMessenger.h"
-#include "Vulkan/Device.h"
-#include "Vulkan/Surface.h"
-#include "Vulkan/SwapChain.h"
-#include "Vulkan/FrameBuffer.h"
-#include "Vulkan/DepthBuffer.h"
-#include "Vulkan/CommandPool.h"
-#include "Vulkan/CommandBuffers.h"
-#include "Vulkan/RenderPass.h"
-#include "Vulkan/Enumerate.h"
-#include "Vulkan/Version.h"
-#include "Vulkan/Strings.h"
 
 namespace VKT {
 
-    GraphicsContext::GraphicsContext(Window &window, VkPresentModeKHR presentMode, bool enableValidationLayers)
-        : m_Window(window), m_VkPresentMode(presentMode)
+#ifdef NDEBUG
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
+
+    // Define Graphics Manager
+    GraphicsManager *g_GraphicsManager = new GraphicsManager();
+
+    int GraphicsManager::Initialize()
     {
         const auto validationLayers = enableValidationLayers
                                       ? std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" }
                                       : std::vector<const char*>();
 
-        m_Instance = CreateScope<Vulkan::Instance>(window, validationLayers, VK_API_VERSION_1_2);
+        m_Instance = CreateScope<Vulkan::Instance>(g_App->GetWindow(), validationLayers, VK_API_VERSION_1_2);
         m_DebugUtilsMessenger = enableValidationLayers? CreateScope<Vulkan::DebugUtilsMessenger>(*m_Instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) : nullptr;
         m_Surface = CreateScope<Vulkan::Surface>(*m_Instance);
 
@@ -41,30 +38,145 @@ namespace VKT {
         CreateSyncObjects();
 
         LogVulkanInfo();
+
+        // TODO: Delete Testing Code
+        const std::vector<Vertex> vertices = {
+            {{-0.5f, -0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {0.0, 0.0}},
+            {{0.5f, -0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {1.0, 0.0}},
+            {{0.5f, 0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {1.0, 1.0}},
+            {{-0.5f, 0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {0.0, 1.0}},
+        };
+
+        const std::vector<uint32_t> indices = {
+            0, 1, 2, 2, 3, 0
+        };
+
+        m_VertexBuffer = CreateRef<VertexBuffer>(vertices);
+        m_IndexBuffer = CreateRef<IndexBuffer>(indices);
+
+        m_UniformBuffer = CreateRef<UniformBuffer>();
+
+        UniformBufferObject ubo = {};
+        ubo.Model = glm::mat4(1.0f);
+        ubo.View = glm::mat4(1.0f);
+        ubo.Proj = glm::mat4(1.0f);
+        m_UniformBuffer->Update(ubo);
+
+        m_CheckerBoardTex = CreateRef<Texture2D>("Resource/Textures/Checkerboard.png");
+
+        m_VertShader = CreateRef<Shader>("Resource/Shaders/shader.vert");
+        m_FragShader = CreateRef<Shader>("Resource/Shaders/shader.frag");
+
+        std::vector<DescriptorBinding> descriptorBindings =
+            {
+                {0, 1, m_UniformBuffer.get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
+                {1, 1, m_CheckerBoardTex.get(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
+            };
+        m_DescriptorSetManager = CreateRef<DescriptorSetManager>(descriptorBindings);
+
+        m_GraphicsPipeline = CreateRef<GraphicsPipeline>(m_VertShader, m_FragShader, m_DescriptorSetManager);
+        
+        return 0;
     }
 
-    GraphicsContext::~GraphicsContext()
+    void GraphicsManager::ShutDown()
     {
+        DeviceWaitIdle();
+
         DeleteSwapChain();
         DeleteSyncObjects();
     }
 
-    const std::vector<VkExtensionProperties> &GraphicsContext::GetExtensions() const
+    void GraphicsManager::Tick()
+    {
+        if (!BeginFrame())
+            return;
+
+        Draw();
+
+        EndFrame();
+
+        Present();
+    }
+
+    void GraphicsManager::Draw()
+    {
+        // TODO: Delete Testing Code
+        VkCommandBuffer vkCommandBuffer = m_CommandBuffers->Begin(m_CurrentImageIndex);
+
+        VkRenderPassBeginInfo renderPassBeginInfo{};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.renderPass = m_RenderPass->GetVkHandle();
+        renderPassBeginInfo.framebuffer = m_FrameBuffers[m_CurrentImageIndex]->GetVkHandle();
+        renderPassBeginInfo.renderArea.offset = {0, 0};
+        renderPassBeginInfo.renderArea.extent = m_SwapChain->GetVkExtent2D();
+
+        std::array<VkClearValue, 2> clearValues = {};
+        clearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+
+        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassBeginInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        UniformBufferObject ubo{};
+        ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.View = glm::mat4(1.0f);
+
+        // Draw Call
+        {
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetPipeline().GetVkHandle());
+
+            VkBuffer vertexBuffers[] = { m_VertexBuffer->GetBuffer().GetVkHandle() };
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
+
+            VkDescriptorSet descriptorSets[] = { m_DescriptorSetManager->GetDescriptorSet().GetVkHandle() };
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_GraphicsPipeline->GetPipelineLayout().GetVkHandle(), 0, 1,
+                                    descriptorSets, 0, nullptr);
+
+            vkCmdDrawIndexed(vkCommandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
+        }
+
+        ubo.Proj = glm::mat4(1.0f);
+
+        m_UniformBuffer->Update(ubo);
+
+        vkCmdEndRenderPass(vkCommandBuffer);
+
+        m_CommandBuffers->End(m_CurrentImageIndex);
+    }
+
+    void GraphicsManager::DeviceWaitIdle()
+    {
+        m_Device->WaitIdle();
+    }
+
+    const std::vector<VkExtensionProperties> &GraphicsManager::GetExtensions() const
     {
         return m_Instance->GetVkExtensionProps();
     }
 
-    const std::vector<VkLayerProperties> &GraphicsContext::GetLayers() const
+    const std::vector<VkLayerProperties> &GraphicsManager::GetLayers() const
     {
         return m_Instance->GetVkLayerProps();
     }
 
-    const std::vector<VkPhysicalDevice> &GraphicsContext::GetPhysicalDevices() const
+    const std::vector<VkPhysicalDevice> &GraphicsManager::GetPhysicalDevices() const
     {
         return m_Instance->GetVkPhysicalDevices();
     }
 
-    void GraphicsContext::SetPhysicalDevice(VkPhysicalDevice physicalDevice)
+    void GraphicsManager::SetPhysicalDevice(VkPhysicalDevice physicalDevice)
     {
         if (m_Device)
         {
@@ -86,7 +198,7 @@ namespace VKT {
         m_CommandPool = CreateScope<Vulkan::CommandPool>(*m_Device, m_Device->GetGraphicsFamilyIndex(), true);
     }
 
-    void GraphicsContext::CreateDevice()
+    void GraphicsManager::CreateDevice()
     {
         const auto &physicalDevices = GetPhysicalDevices();
         const auto result = std::find_if(physicalDevices.begin(), physicalDevices.end(), [](const VkPhysicalDevice& device)
@@ -117,15 +229,15 @@ namespace VKT {
         SetPhysicalDevice(*result);
     }
 
-    void GraphicsContext::CreateSwapChain()
+    void GraphicsManager::CreateSwapChain()
     {
         // Wait until the window is visible.
-        while (m_Window.GetWidth() == 0 || m_Window.GetHeight() == 0)
+        while (g_App->IsMinimized())
         {
-            m_Window.WaitForEvents();
+            g_App->GetWindow().WaitForEvents();
         }
 
-        m_SwapChain = CreateScope<Vulkan::SwapChain>(*m_Device, m_VkPresentMode);
+        m_SwapChain = CreateScope<Vulkan::SwapChain>(*m_Device, Config::kVkPresentMode);
         m_DepthBuffer = CreateScope<Vulkan::DepthBuffer>(*m_CommandPool, m_SwapChain->GetVkExtent2D());
         m_RenderPass = CreateScope<Vulkan::RenderPass>(*m_SwapChain, *m_DepthBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
 
@@ -139,7 +251,7 @@ namespace VKT {
         m_ImagesInFlight.resize(m_SwapChain->GetVkImages().size(), VK_NULL_HANDLE);
     }
 
-    void GraphicsContext::DeleteSwapChain()
+    void GraphicsManager::DeleteSwapChain()
     {
         m_CommandBuffers.reset();
         m_FrameBuffers.clear();
@@ -148,11 +260,11 @@ namespace VKT {
         m_SwapChain.reset();
     }
 
-    void GraphicsContext::CreateSyncObjects()
+    void GraphicsManager::CreateSyncObjects()
     {
-        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+        m_ImageAvailableSemaphores.resize(Config::kMaxInFlightFrameCount);
+        m_RenderFinishedSemaphores.resize(Config::kMaxInFlightFrameCount);
+        m_InFlightFences.resize(Config::kMaxInFlightFrameCount);
         m_ImagesInFlight.resize(m_SwapChain->GetVkImages().size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
@@ -162,7 +274,7 @@ namespace VKT {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
         {
             if (vkCreateSemaphore(m_Device->GetVkHandle(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(m_Device->GetVkHandle(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
@@ -173,9 +285,9 @@ namespace VKT {
         }
     }
 
-    void GraphicsContext::DeleteSyncObjects()
+    void GraphicsManager::DeleteSyncObjects()
     {
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
         {
             vkDestroySemaphore(m_Device->GetVkHandle(), m_RenderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(m_Device->GetVkHandle(), m_ImageAvailableSemaphores[i], nullptr);
@@ -183,14 +295,14 @@ namespace VKT {
         }
     }
 
-    void GraphicsContext::RecreateSwapChain()
+    void GraphicsManager::RecreateSwapChain()
     {
         m_Device->WaitIdle();
         DeleteSwapChain();
         CreateSwapChain();
     }
 
-    bool GraphicsContext::DrawFrameBegin()
+    bool GraphicsManager::BeginFrame()
     {
         vkWaitForFences(m_Device->GetVkHandle(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
@@ -220,7 +332,7 @@ namespace VKT {
         return true;
     }
 
-    void GraphicsContext::DrawFrameEnd()
+    void GraphicsManager::EndFrame()
     {
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -236,7 +348,7 @@ namespace VKT {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = commandBuffers;
 
-        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
+        VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -247,11 +359,19 @@ namespace VKT {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
+        m_CurrentFrame = (m_CurrentFrame + 1) % Config::kMaxInFlightFrameCount;
+    }
+
+    void GraphicsManager::Present()
+    {
+        size_t prevFrame = (m_CurrentFrame - 1) % Config::kMaxInFlightFrameCount;
+        VkSemaphore waitSemaphores[] = { m_RenderFinishedSemaphores[prevFrame] };
+
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = waitSemaphores;
 
         VkSwapchainKHR swapChains[] = {m_SwapChain->GetVkHandle()};
         presentInfo.swapchainCount = 1;
@@ -269,11 +389,9 @@ namespace VKT {
         {
             throw std::runtime_error("failed to present swap chain image!");
         }
-
-        m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void GraphicsContext::LogVulkanInfo()
+    void GraphicsManager::LogVulkanInfo()
     {
         VKT_CORE_INFO("Vulkan SDK Header Version: {}", VK_HEADER_VERSION);
 
@@ -316,10 +434,4 @@ namespace VKT {
                           driverVersion);
         }
     }
-
-    void GraphicsContext::DeviceWaitIdle()
-    {
-        m_Device->WaitIdle();
-    }
-
 }

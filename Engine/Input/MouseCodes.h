@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace VKT {
 
     using MouseCode = uint16_t;

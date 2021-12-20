@@ -1,8 +1,7 @@
 project(Sandbox)
 
 add_executable(${PROJECT_NAME}
-        Source/SandboxApp.cpp
-        Source/ExamplerLayer.cpp)
+        Source/SandboxApp.cpp)
 
 target_link_libraries(${PROJECT_NAME} Vkita)
 

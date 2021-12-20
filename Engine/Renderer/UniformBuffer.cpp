@@ -1,7 +1,6 @@
 #include "UniformBuffer.h"
 
-#include "Renderer.h"
-#include "GraphicsContext.h"
+#include "Common/GraphicsManager.h"
 
 namespace VKT {
 
@@ -9,7 +8,7 @@ namespace VKT {
     {
         const auto bufferSize = sizeof(UniformBufferObject);
 
-        m_Buffer = CreateScope<Vulkan::Buffer>(Renderer::GetGraphicsContext().GetDevice(), bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        m_Buffer = CreateScope<Vulkan::Buffer>(g_GraphicsManager->GetDevice(), bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         m_DeviceMemory = CreateScope<Vulkan::DeviceMemory>(m_Buffer->AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     }
 

@@ -1,12 +1,11 @@
 #include "Window.h"
 
-#include "Core/Timestep.h"
+#include "ApplicationEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
 
-#include "Debug/Assert.h"
-
-#include "Events/ApplicationEvent.h"
-#include "Events/KeyEvent.h"
-#include "Events/MouseEvent.h"
+#include "Common/Assert.h"
+#include "Common/Config.h"
 
 namespace VKT {
 
@@ -17,26 +16,21 @@ namespace VKT {
         VKT_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
     }
 
-    Window::Window(const WindowProps &props)
+    Window::Window()
     {
-        Init(props);
+        Initialize();
     }
 
     Window::~Window()
     {
-        Shutdown();
+        ShutDown();
     }
 
-    void Window::OnUpdate(Timestep ts)
+    void Window::Initialize()
     {
-        glfwPollEvents();
-    }
-
-    void Window::Init(const WindowProps &props)
-    {
-        m_Data.Title = props.Title;
-        m_Data.Width = props.Width;
-        m_Data.Height = props.Height;
+        m_Data.Title = Config::kName;
+        m_Data.Width = Config::kWidth;
+        m_Data.Height = Config::kHeight;
 
         if (s_GLFWWindowCount == 0)
         {
@@ -48,13 +42,9 @@ namespace VKT {
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_Window = glfwCreateWindow((int) props.Width, (int) props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+        m_Window = glfwCreateWindow((int) m_Data.Width, (int) m_Data.Height, m_Data.Title, nullptr, nullptr);
 
         glfwSetWindowUserPointer(m_Window, &m_Data);
-
-        // Enable VSync
-        m_Data.VSync = true;
-        SetVSync(m_Data.VSync);
 
         // set GLFW callbacks
         glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -137,12 +127,7 @@ namespace VKT {
         });
     }
 
-    void Window::SetVSync(bool enabled)
-    {
-        m_Data.VSync = enabled;
-    }
-
-    void Window::Shutdown()
+    void Window::ShutDown()
     {
         glfwDestroyWindow(m_Window);
         glfwTerminate();

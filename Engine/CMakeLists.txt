@@ -1,11 +1,12 @@
 file(GLOB_RECURSE SRCS
-        Core/*.cpp
+        Application/*.cpp
+        Common/*.cpp
         Debug/*.cpp
         Input/*.cpp
+        Memory/*.cpp
         Renderer/*.cpp
         Utils/*.cpp
         Vulkan/*.cpp
-        Window/*.cpp
         )
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})

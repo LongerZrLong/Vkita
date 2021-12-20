@@ -4,7 +4,7 @@
 
 #include <stb_image.h>
 
-#include "Renderer.h"
+#include "Common/GraphicsManager.h"
 
 #include "Vulkan/Buffer.h"
 #include "Vulkan/CommandPool.h"
@@ -37,7 +37,7 @@ namespace VKT {
     Texture2D::Texture2D(uint32_t width, uint32_t height)
         : m_Width(width), m_Height(height)
     {
-        const Vulkan::Device &device = Renderer::GetGraphicsContext().GetDevice();
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
 
         // Create the device side image, memory, view and sampler.
         m_Image = CreateScope<Vulkan::Image>(device, VkExtent2D{ width, width }, VK_FORMAT_R8G8B8A8_UNORM);
@@ -48,8 +48,8 @@ namespace VKT {
 
     void Texture2D::SetData(void *data, uint32_t size)
     {
-        const Vulkan::CommandPool &commandPool = Renderer::GetGraphicsContext().GetCommandPool();
-        const Vulkan::Device &device = Renderer::GetGraphicsContext().GetDevice();
+        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
 
         // Create a host staging buffer and copy the image into it.
         VkDeviceSize imageSize = size;
@@ -71,7 +71,7 @@ namespace VKT {
 
     void Texture2D::PrepareTexture2D()
     {
-        const Vulkan::Device &device = Renderer::GetGraphicsContext().GetDevice();
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
 
         // Create the device side image, memory, view and sampler.
         m_Image = CreateScope<Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);

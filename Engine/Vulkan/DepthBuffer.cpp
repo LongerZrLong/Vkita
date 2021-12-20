@@ -1,6 +1,6 @@
 #include "DepthBuffer.h"
 
-#include "Core/Base.h"
+#include "Common/Base.h"
 
 #include "CommandPool.h"
 #include "Device.h"

@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
-#include "Core/Base.h"
+#include "Common/Base.h"
 
 namespace VKT {
 

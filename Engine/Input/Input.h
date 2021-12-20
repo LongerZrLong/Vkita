@@ -1,10 +1,11 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <Math/Glm.h>
 
-#include "Core/Base.h"
-#include "Core/KeyCodes.h"
-#include "Core/MouseCodes.h"
+#include "KeyCodes.h"
+#include "MouseCodes.h"
+
+#include "Common/Base.h"
 
 namespace VKT {
 
@@ -12,10 +13,8 @@ namespace VKT {
     {
     public:
         static bool IsKeyPressed(KeyCode key);
-
         static bool IsMouseButtonPressed(MouseCode button);
+
         static glm::vec2 GetMousePosition();
-        static float GetMouseX();
-        static float GetMouseY();
     };
 }

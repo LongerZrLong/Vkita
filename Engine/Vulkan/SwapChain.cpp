@@ -10,7 +10,7 @@
 #include "Instance.h"
 #include "Surface.h"
 
-#include "Window/Window.h"
+#include "Application/Window.h"
 
 namespace VKT::Vulkan {
 

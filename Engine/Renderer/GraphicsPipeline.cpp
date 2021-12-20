@@ -1,7 +1,8 @@
 #include "GraphicsPipeline.h"
 
 #include "Vertex.h"
-#include "Renderer.h"
+
+#include "Common/GraphicsManager.h"
 
 #include "Vulkan/Device.h"
 #include "Vulkan/SwapChain.h"
@@ -15,9 +16,9 @@ namespace VKT {
                                        const Ref<DescriptorSetManager> &descriptorSetManager)
         : m_VertShader(vertShader), m_FragShader(fragShader), m_DescriptorSetManager(descriptorSetManager)
     {
-        const Vulkan::Device &device = Renderer::GetGraphicsContext().GetDevice();
-        const Vulkan::SwapChain &swapChain = Renderer::GetGraphicsContext().GetSwapChain();
-        const Vulkan::RenderPass &renderPass = Renderer::GetGraphicsContext().GetRenderPass();
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const Vulkan::SwapChain &swapChain = g_GraphicsManager->GetSwapChain();
+        const Vulkan::RenderPass &renderPass = g_GraphicsManager->GetRenderPass();
 
         const auto bindingDescription = Vertex::GetBindingDescription();
         const auto attributeDescriptions = Vertex::GetAttributeDescriptions();

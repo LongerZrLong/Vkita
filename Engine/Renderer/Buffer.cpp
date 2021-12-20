@@ -1,7 +1,6 @@
 #include "Buffer.h"
 
-#include "Renderer.h"
-#include "GraphicsContext.h"
+#include "Common/GraphicsManager.h"
 
 #include "Vulkan/Buffer.h"
 #include "Vulkan/BufferUtil.h"
@@ -14,7 +13,7 @@ namespace VKT {
         : m_Count(vertices.size())
     {
         auto flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | commonFlags;
-        const Vulkan::CommandPool &commandPool = Renderer::GetGraphicsContext().GetCommandPool();
+        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
         Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "Vertices", flags, vertices, m_Buffer, m_DeviceMemory);
     }
 
@@ -27,7 +26,7 @@ namespace VKT {
         : m_Count(indices.size())
     {
         auto flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | commonFlags;
-        const Vulkan::CommandPool &commandPool = Renderer::GetGraphicsContext().GetCommandPool();
+        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
         Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "indices", flags, indices, m_Buffer, m_DeviceMemory);
     }
 

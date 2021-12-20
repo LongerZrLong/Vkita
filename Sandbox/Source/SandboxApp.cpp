@@ -1,20 +1,30 @@
-#include "ExamplerLayer.h"
-
 #include <Vkita.h>
 
-class SandboxApp : public VKT::Application
-{
-public:
-    SandboxApp()
+namespace VKT {
+
+    class ExampleLayer : public Layer
     {
-        PushLayer(new ExampleLayer());
-    }
+    public:
+        void OnUpdate(Timestep ts)
+        {
+            if (Input::IsKeyPressed(Key::A))
+                VKT_INFO("{} is pressed.", char(Key::A));
+        }
 
-    ~SandboxApp() override = default;
-};
+        void OnEvent(Event &e)
+        {
+        }
 
-VKT::Application *VKT::CreateApplication()
-{
-    Log::Init();
-    return new SandboxApp();
+    };
+
+    class SandboxApp : public Application
+    {
+    public:
+        SandboxApp()
+        {
+            PushLayer(new ExampleLayer());
+        }
+    };
 }
+
+VKT::Application *VKT::g_App = new SandboxApp();

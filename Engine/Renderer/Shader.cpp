@@ -1,7 +1,6 @@
 #include "Shader.h"
 
-#include "Renderer.h"
-#include "GraphicsContext.h"
+#include "Common/GraphicsManager.h"
 
 #include "Vulkan/ShaderModule.h"
 
@@ -9,12 +8,12 @@ namespace VKT {
 
     Shader::Shader(const std::string &filename)
     {
-        m_ShaderModule = CreateScope<Vulkan::ShaderModule>(Renderer::GetGraphicsContext().GetDevice(), filename);
+        m_ShaderModule = CreateScope<Vulkan::ShaderModule>(g_GraphicsManager->GetDevice(), filename);
     }
 
     Shader::Shader(const std::vector<char> &code)
     {
-        m_ShaderModule = CreateScope<Vulkan::ShaderModule>(Renderer::GetGraphicsContext().GetDevice(), code);
+        m_ShaderModule = CreateScope<Vulkan::ShaderModule>(g_GraphicsManager->GetDevice(), code);
     }
 
     Shader::~Shader()

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Event.h"
-#include "Core/MouseCodes.h"
+#include "Input/MouseCodes.h"
 
 namespace VKT {
 
