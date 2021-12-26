@@ -19,12 +19,13 @@ namespace VKT {
 
     int GraphicsManager::Initialize()
     {
-        const auto validationLayers = enableValidationLayers
+        const auto validationLayers = Config::kEnableValidationLayers
                                       ? std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" }
                                       : std::vector<const char*>();
 
         m_Instance = CreateScope<Vulkan::Instance>(g_App->GetWindow(), validationLayers, VK_API_VERSION_1_2);
-        m_DebugUtilsMessenger = enableValidationLayers? CreateScope<Vulkan::DebugUtilsMessenger>(*m_Instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) : nullptr;
+        m_DebugUtilsMessenger = Config::kEnableValidationLayers?
+            CreateScope<Vulkan::DebugUtilsMessenger>(*m_Instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) : nullptr;
         m_Surface = CreateScope<Vulkan::Surface>(*m_Instance);
 
         CreateDevice();
