@@ -2,6 +2,8 @@
 
 #include "Common.h"
 
+#include "Core/Config.h"
+
 namespace VKT::Vulkan {
 
 	class DebugUtils
@@ -38,16 +40,17 @@ namespace VKT::Vulkan {
 		template <typename T>
 		void SetObjectName(const T &object, const char* name, VkObjectType type) const
 		{
-#ifndef NDEBUG
-			VkDebugUtilsObjectNameInfoEXT info = {};
-			info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-			info.pNext = nullptr;
-			info.objectHandle = reinterpret_cast<const uint64_t&>(object);
-			info.objectType = type;
-			info.pObjectName = name;
-			
-			Check(vkSetDebugUtilsObjectNameEXT_(m_VkDevice, &info), "set object name");
-#endif
+            if (Config::kEnableValidationLayers)
+            {
+                VkDebugUtilsObjectNameInfoEXT info = {};
+                info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+                info.pNext = nullptr;
+                info.objectHandle = reinterpret_cast<const uint64_t&>(object);
+                info.objectType = type;
+                info.pObjectName = name;
+
+                Check(vkSetDebugUtilsObjectNameEXT_(m_VkDevice, &info), "set object name");
+            }
 		}
 
 		const PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT_;

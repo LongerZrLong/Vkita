@@ -11,6 +11,8 @@ namespace VKT {
         static const uint32_t kWidth;
         static const uint32_t kHeight;
 
+        static const bool kEnableValidationLayers;
+
         static const uint32_t kMaxInFlightFrameCount;
         static const VkPresentModeKHR kVkPresentMode;
 
