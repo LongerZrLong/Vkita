@@ -1,8 +1,8 @@
 #include <Vkita.h>
 
 #include <Core/InputManager.h>
+#include <Core/FileSystem.h>
 #include <Core/GraphicsManager.h>
-#include <Core/MemoryManager.h>
 
 namespace VKT {
 
@@ -31,8 +31,8 @@ namespace VKT {
     };
 
     Application         *g_App = new SandboxApp();
+    FileSystem          *g_FileSystem = new FileSystem();
     InputManager        *g_InputManager = new InputManager();
-    MemoryManager       *g_MemoryManager = new MemoryManager();
     GraphicsManager     *g_GraphicsManager = new GraphicsManager();
 }
 
@@ -43,6 +43,7 @@ int main(int, char**)
     Log::Init();
 
     g_App->Initialize();
+    g_FileSystem->Initialize();
     g_InputManager->Initialize();
     g_GraphicsManager->Initialize();
 

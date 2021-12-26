@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Core/Base.h"
+#include "Core/Image.h"
 
 namespace VKT {
 
@@ -19,7 +20,7 @@ namespace VKT {
     public:
         NON_COPIABLE(Texture2D);
 
-        Texture2D(const std::string &path);
+        explicit Texture2D(const Image &img);
         Texture2D(uint32_t width, uint32_t height);
         ~Texture2D();
 

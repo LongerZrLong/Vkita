@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "Log.h"
+#include "Image.h"
 #include "FileSystem.h"
 
 #include "Application/Application.h"
@@ -54,7 +55,8 @@ namespace VKT {
         ubo.Proj = glm::mat4(1.0f);
         m_UniformBuffer->Update(ubo);
 
-        m_CheckerBoardTex = CreateRef<Texture2D>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
+        Image img = Image(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
+        m_CheckerBoardTex = CreateRef<Texture2D>(img);
 
         m_VertShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
         m_FragShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));

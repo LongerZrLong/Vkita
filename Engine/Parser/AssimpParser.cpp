@@ -1,5 +1,6 @@
 #include "AssimpParser.h"
 
+#include "Core/Image.h"
 #include "Core/FileSystem.h"
 
 #include "Renderer/Texture2D.h"
@@ -109,19 +110,19 @@ namespace VKT {
             auto found = textures.find(mat.m_DiffuseTextureName);
             if (found == textures.end() && !mat.m_DiffuseTextureName.empty())
             {
-                textures[mat.m_DiffuseTextureName] = CreateScope<Texture2D>(g_FileSystem->Append(m_SceneRootDir, mat.m_DiffuseTextureName));
+                textures[mat.m_DiffuseTextureName] = CreateScope<Texture2D>(Image(g_FileSystem->Append(m_SceneRootDir, mat.m_DiffuseTextureName)));
             }
 
             found = textures.find(mat.m_SpecularTextureName);
             if (found == textures.end() && !mat.m_SpecularTextureName.empty())
             {
-                textures[mat.m_SpecularTextureName] = CreateScope<Texture2D>(g_FileSystem->Append(m_SceneRootDir, mat.m_SpecularTextureName));
+                textures[mat.m_SpecularTextureName] = CreateScope<Texture2D>(Image(g_FileSystem->Append(m_SceneRootDir, mat.m_SpecularTextureName)));
             }
 
             found = textures.find(mat.m_NormalTextureName);
             if (found == textures.end() && !mat.m_NormalTextureName.empty())
             {
-                textures[mat.m_NormalTextureName] = CreateScope<Texture2D>(g_FileSystem->Append(m_SceneRootDir, mat.m_NormalTextureName));
+                textures[mat.m_NormalTextureName] = CreateScope<Texture2D>(Image(g_FileSystem->Append(m_SceneRootDir, mat.m_NormalTextureName)));
             }
         }
 

@@ -1,10 +1,7 @@
 #include "Texture2D.h"
 
-#include <string>
-
 #include <stb_image.h>
 
-#include "Core/FileSystem.h"
 #include "Core/GraphicsManager.h"
 
 #include "Vulkan/Buffer.h"
@@ -16,35 +13,17 @@
 
 namespace VKT {
 
-    Texture2D::Texture2D(const std::string &path)
+    Texture2D::Texture2D(const Image &img)
+        : m_Width(img.m_Width), m_Height(img.m_Height)
     {
-        int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        if (!pixels)
-        {
-            throw std::runtime_error("failed to load texture image!");
-        }
-
-        m_Width = texWidth;
-        m_Height = texHeight;
-
         PrepareTexture2D();
-
-        SetData(pixels, imageSize);
+        SetData(img.m_Data, img.m_DataSize);
     }
 
     Texture2D::Texture2D(uint32_t width, uint32_t height)
         : m_Width(width), m_Height(height)
     {
-        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
-
-        // Create the device side image, memory, view and sampler.
-        m_Image = CreateScope<Vulkan::Image>(device, VkExtent2D{ width, width }, VK_FORMAT_R8G8B8A8_UNORM);
-        m_DeviceMemory = CreateScope<Vulkan::DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        m_ImageView = CreateScope<Vulkan::ImageView>(device, m_Image->GetVkHandle(), m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
-        m_Sampler = CreateScope<Vulkan::Sampler>(device, Vulkan::SamplerConfig());
+        PrepareTexture2D();
     }
 
     void Texture2D::SetData(void *data, uint32_t size)
