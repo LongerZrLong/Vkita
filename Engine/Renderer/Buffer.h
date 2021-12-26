@@ -2,7 +2,7 @@
 
 #include "Vertex.h"
 
-#include "Common/Base.h"
+#include "Core/Base.h"
 
 namespace VKT {
 

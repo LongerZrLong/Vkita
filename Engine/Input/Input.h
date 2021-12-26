@@ -5,7 +5,7 @@
 #include "KeyCodes.h"
 #include "MouseCodes.h"
 
-#include "Common/Base.h"
+#include "Core/Base.h"
 
 namespace VKT {
 

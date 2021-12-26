@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "DescriptorSetManager.h"
 
-#include "Common/Base.h"
+#include "Core/Base.h"
 
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/PipelineLayout.h"

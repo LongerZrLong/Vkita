@@ -3,8 +3,8 @@
 #include <string>
 #include <utility>
 
-#include "Common/Base.h"
-#include "Common/Timestep.h"
+#include "Core/Base.h"
+#include "Core/Timestep.h"
 
 #include "Event.h"
 

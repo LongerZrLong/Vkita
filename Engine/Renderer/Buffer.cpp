@@ -1,6 +1,6 @@
 #include "Buffer.h"
 
-#include "Common/GraphicsManager.h"
+#include "Core/GraphicsManager.h"
 
 #include "Vulkan/Buffer.h"
 #include "Vulkan/BufferUtil.h"

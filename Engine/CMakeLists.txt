@@ -1,6 +1,6 @@
 file(GLOB_RECURSE SRCS
         Application/*.cpp
-        Common/*.cpp
+        Core/*.cpp
         Debug/*.cpp
         Input/*.cpp
         Memory/*.cpp

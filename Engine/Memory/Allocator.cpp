@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "Common/Assert.h"
+#include "Core/Assert.h"
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))

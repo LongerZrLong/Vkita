@@ -10,9 +10,9 @@
 #include "Application/Window.h"
 
 // Common
-#include "Common/Base.h"
-#include "Common/Log.h"
-#include "Common/Timestep.h"
+#include "Core/Base.h"
+#include "Core/Log.h"
+#include "Core/Timestep.h"
 
 // Input
 #include "Input/Input.h"

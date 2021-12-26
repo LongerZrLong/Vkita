@@ -2,7 +2,7 @@
 
 #include "Vertex.h"
 
-#include "Common/GraphicsManager.h"
+#include "Core/GraphicsManager.h"
 
 #include "Vulkan/Device.h"
 #include "Vulkan/SwapChain.h"

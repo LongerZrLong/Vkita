@@ -1,6 +1,6 @@
 #include "UniformBuffer.h"
 
-#include "Common/GraphicsManager.h"
+#include "Core/GraphicsManager.h"
 
 namespace VKT {
 

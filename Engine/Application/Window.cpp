@@ -4,8 +4,8 @@
 #include "KeyEvent.h"
 #include "MouseEvent.h"
 
-#include "Common/Assert.h"
-#include "Common/Config.h"
+#include "Core/Assert.h"
+#include "Core/Config.h"
 
 namespace VKT {
 

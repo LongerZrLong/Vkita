@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "Common/Base.h"
+#include "Core/Base.h"
 
 #define VULKAN_HANDLE(VulkanHandleType, name) \
 public: \

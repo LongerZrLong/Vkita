@@ -4,8 +4,8 @@
 #include "UniformBuffer.h"
 #include "Texture2D.h"
 
-#include "Common/Base.h"
-#include "Common/GraphicsManager.h"
+#include "Core/Base.h"
+#include "Core/GraphicsManager.h"
 
 #include "Vulkan/Device.h"
 #include "Vulkan/ImageView.h"

@@ -4,7 +4,7 @@
 
 #include <stb_image.h>
 
-#include "Common/GraphicsManager.h"
+#include "Core/GraphicsManager.h"
 
 #include "Vulkan/Buffer.h"
 #include "Vulkan/CommandPool.h"

@@ -4,7 +4,7 @@
 
 #include "Application/Application.h"
 
-#include "Common/Log.h"
+#include "Core/Log.h"
 
 // Temporary
 #include <array>

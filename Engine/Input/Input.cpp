@@ -1,6 +1,6 @@
 #include "Input.h"
 
-#include "Common/InputManager.h"
+#include "Core/InputManager.h"
 
 namespace VKT {
 

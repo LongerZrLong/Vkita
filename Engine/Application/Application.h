@@ -4,7 +4,7 @@
 #include "LayerStack.h"
 #include "Window.h"
 
-#include "Common/Base.h"
+#include "Core/Base.h"
 
 #include "Interface/IRuntimeModule.h"
 

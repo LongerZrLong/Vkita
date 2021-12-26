@@ -1,8 +1,8 @@
 #include <Vkita.h>
 
-#include <Common/InputManager.h>
-#include <Common/GraphicsManager.h>
-#include <Common/MemoryManager.h>
+#include <Core/InputManager.h>
+#include <Core/GraphicsManager.h>
+#include <Core/MemoryManager.h>
 
 namespace VKT {
 
