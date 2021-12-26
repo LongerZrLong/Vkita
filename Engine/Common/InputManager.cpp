@@ -6,9 +6,6 @@
 
 namespace VKT {
 
-    // Define Input Manager
-    InputManager *g_InputManager = new InputManager();
-
     int InputManager::Initialize()
     {
         return 0;

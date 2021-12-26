@@ -1,5 +1,9 @@
 #include <Vkita.h>
 
+#include <Common/InputManager.h>
+#include <Common/GraphicsManager.h>
+#include <Common/MemoryManager.h>
+
 namespace VKT {
 
     class ExampleLayer : public Layer
@@ -25,6 +29,33 @@ namespace VKT {
             PushLayer(new ExampleLayer());
         }
     };
+
+    Application         *g_App = new SandboxApp();
+    InputManager        *g_InputManager = new InputManager();
+    MemoryManager       *g_MemoryManager = new MemoryManager();
+    GraphicsManager     *g_GraphicsManager = new GraphicsManager();
 }
 
-VKT::Application *VKT::g_App = new SandboxApp();
+using namespace VKT;
+
+int main(int, char**)
+{
+    Log::Init();
+
+    g_App->Initialize();
+    g_InputManager->Initialize();
+    g_GraphicsManager->Initialize();
+
+    while (g_App->IsRunning())
+    {
+        g_App->Tick();
+        g_InputManager->Tick();
+        g_GraphicsManager->Tick();
+    }
+
+    g_InputManager->ShutDown();
+    g_GraphicsManager->ShutDown();
+    g_App->ShutDown();
+
+    return 0;
+}

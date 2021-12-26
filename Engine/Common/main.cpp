@@ -1,5 +1,3 @@
-#include "EntryPoint.h"
-
 #include <vector>
 #include <iostream>
 

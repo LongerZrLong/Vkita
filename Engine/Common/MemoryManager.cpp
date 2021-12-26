@@ -30,9 +30,6 @@ namespace VKT {
     // largest valid block size
     static const uint32_t kMaxBlockSize = kBlockSizes[kNumBlockSizes - 1];
 
-    // Define Memory Manager
-    MemoryManager *g_MemoryManager = new MemoryManager();
-
     // Define static members of MemoryManager
     size_t       *MemoryManager::m_BlockSizeLookup = nullptr;
     Allocator    *MemoryManager::m_Allocators = nullptr;

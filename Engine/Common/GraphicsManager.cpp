@@ -17,9 +17,6 @@ namespace VKT {
     const bool enableValidationLayers = true;
 #endif
 
-    // Define Graphics Manager
-    GraphicsManager *g_GraphicsManager = new GraphicsManager();
-
     int GraphicsManager::Initialize()
     {
         const auto validationLayers = enableValidationLayers

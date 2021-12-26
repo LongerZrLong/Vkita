@@ -11,7 +11,6 @@
 
 // Common
 #include "Common/Base.h"
-#include "Common/EntryPoint.h"
 #include "Common/Log.h"
 #include "Common/Timestep.h"
 
