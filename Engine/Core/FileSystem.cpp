@@ -5,7 +5,29 @@
 
 #include "Buffer.h"
 
+namespace fs = std::filesystem;
+
 namespace VKT {
+
+    int FileSystem::Initialize()
+    {
+        // Search upward to find the project root directory
+        // The directory that contains directory Resource is defined as project root directory
+        fs::path path = fs::absolute(fs::current_path());
+
+        for (int32_t i = 0; i < 10; i++)
+        {
+            if (std::filesystem::is_directory(path / "Resource"))
+            {
+                m_ProjectRoot = path.string();
+                return 0;
+            }
+
+            path /= "..";
+        }
+
+        return -1;
+    }
 
     std::vector<char> FileSystem::ReadFile(const std::string &path, std::ios::openmode openmode)
     {

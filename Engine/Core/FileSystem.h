@@ -30,15 +30,20 @@ namespace VKT {
         FileSystem() = default;
         ~FileSystem() override = default;
 
-        int Initialize() override { return 0; }
+        int Initialize() override;
         void ShutDown() override {}
 
         void Tick() override {}
+
+        std::string GetRoot() const { return m_ProjectRoot; }
 
         std::vector<char> ReadFile(const std::string &path, std::ios::openmode = std::ios::binary);
 
         std::string ParentPath(const std::string &path);
         std::string Append(const std::string &first, const std::string &second);
+
+    private:
+        std::string m_ProjectRoot;
 
     };
 
