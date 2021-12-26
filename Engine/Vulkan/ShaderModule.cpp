@@ -6,8 +6,8 @@
 
 namespace VKT::Vulkan {
 
-    ShaderModule::ShaderModule(const Device &device, const std::string &filename)
-        : ShaderModule(device, ReadFile(filename))
+    ShaderModule::ShaderModule(const Device &device, const std::string &path)
+        : ShaderModule(device, ReadFile(path))
     {
     }
 

@@ -4,7 +4,9 @@ file(GLOB_RECURSE SRCS
         Debug/*.cpp
         Input/*.cpp
         Memory/*.cpp
+        Parser/*.cpp
         Renderer/*.cpp
+        Scene/*.cpp
         Utils/*.cpp
         Vulkan/*.cpp
         )
@@ -59,3 +61,7 @@ add_dependencies(${PROJECT_NAME} Shaders)
 # stb_image
 add_subdirectory(External/stb_image)
 target_link_libraries(${PROJECT_NAME} PUBLIC stb_image)
+
+# Assimp
+add_subdirectory(External/Assimp)
+target_link_libraries(${PROJECT_NAME} PUBLIC assimp)

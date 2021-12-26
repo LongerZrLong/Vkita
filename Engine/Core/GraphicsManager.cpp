@@ -1,21 +1,15 @@
 #include "GraphicsManager.h"
 
 #include "Config.h"
+#include "Log.h"
+#include "FileSystem.h"
 
 #include "Application/Application.h"
-
-#include "Core/Log.h"
 
 // Temporary
 #include <array>
 
 namespace VKT {
-
-#ifdef NDEBUG
-    const bool enableValidationLayers = false;
-#else
-    const bool enableValidationLayers = true;
-#endif
 
     int GraphicsManager::Initialize()
     {
@@ -39,10 +33,10 @@ namespace VKT {
 
         // TODO: Delete Testing Code
         const std::vector<Vertex> vertices = {
-            {{-0.5f, -0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {0.0, 0.0}},
-            {{0.5f, -0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {1.0, 0.0}},
-            {{0.5f, 0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {1.0, 1.0}},
-            {{-0.5f, 0.5f, 0.0f}, {0.2f, 0.3f, 0.9f}, {0.0, 1.0}},
+            {{-0.5f, -0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0.0, 0.0}},
+            {{0.5f, -0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1.0, 0.0}},
+            {{0.5f, 0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1.0, 1.0}},
+            {{-0.5f, 0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0.0, 1.0}},
         };
 
         const std::vector<uint32_t> indices = {
@@ -60,10 +54,10 @@ namespace VKT {
         ubo.Proj = glm::mat4(1.0f);
         m_UniformBuffer->Update(ubo);
 
-        m_CheckerBoardTex = CreateRef<Texture2D>("Resource/Textures/Checkerboard.png");
+        m_CheckerBoardTex = CreateRef<Texture2D>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
 
-        m_VertShader = CreateRef<Shader>("Resource/Shaders/shader.vert");
-        m_FragShader = CreateRef<Shader>("Resource/Shaders/shader.frag");
+        m_VertShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
+        m_FragShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
 
         std::vector<DescriptorBinding> descriptorBindings =
             {

@@ -22,7 +22,7 @@
 // Math
 #include "Math/Glm.h"
 
-//Renderer
+// Renderer
 #include "Renderer/DescriptorBinding.h"
 #include "Renderer/DescriptorSetManager.h"
 #include "Renderer/UniformBuffer.h"
@@ -31,3 +31,7 @@
 #include "Renderer/GraphicsPipeline.h"
 #include "Renderer/Shader.h"
 #include "Renderer/Texture2D.h"
+
+// Scene
+#include "Scene/Scene.h"
+#include "Scene/SceneNode.h"

@@ -15,7 +15,7 @@ namespace VKT {
     public:
         NON_COPIABLE(Shader);
 
-        explicit Shader(const std::string &filename);
+        explicit Shader(const std::string &path);
         explicit Shader(const std::vector<char> &code);
         Shader() = delete;
         ~Shader();
