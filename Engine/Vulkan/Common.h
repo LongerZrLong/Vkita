@@ -7,7 +7,7 @@
 
 #define VULKAN_HANDLE(VulkanHandleType, name) \
 public: \
-	VulkanHandleType GetVkHandle() const { return name; } \
+	const VulkanHandleType &GetVkHandle() const { return name; } \
 private: \
 	VulkanHandleType name{VK_NULL_HANDLE};
 

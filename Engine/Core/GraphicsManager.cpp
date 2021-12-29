@@ -1,5 +1,7 @@
 #include "GraphicsManager.h"
 
+#include <array>
+
 #include "Config.h"
 #include "Log.h"
 #include "Image.h"
@@ -12,10 +14,6 @@
 #include "Vulkan/Initializers.h"
 #include "Vulkan/ImageView.h"
 #include "Vulkan/Sampler.h"
-#include "Vulkan/ShaderModule.h"
-
-// Temporary
-#include <array>
 
 namespace VKT {
 
@@ -74,8 +72,8 @@ namespace VKT {
         Image img = Image(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
         m_CheckerBoardTex = CreateRef<Texture2D>(img);
 
-        m_VertShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
-        m_FragShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
+        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
+        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
         
         // Create Pipeline Layout
         std::vector<VkDescriptorPoolSize> poolSizes = {
@@ -85,7 +83,7 @@ namespace VKT {
 
         const uint32_t maxSetCount = (1 + 1) * m_SwapChain->GetVkImages().size();
         VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
-        vkCreateDescriptorPool(m_Device->GetVkHandle(), &descriptorPoolInfo, nullptr, &m_VkDescriptorPool);
+        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Device, &descriptorPoolInfo);
 
         // Descriptor set layout
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
@@ -93,17 +91,16 @@ namespace VKT {
             Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
         };
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-
-        vkCreateDescriptorSetLayout(m_Device->GetVkHandle(), &descriptorSetLayoutCI, nullptr, &m_VkDescriptorSetLayout);
+        m_DescriptorSetLayout = CreateRef<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
 
         // Pipeline layout
-        std::array<VkDescriptorSetLayout, 1> setLayouts = { m_VkDescriptorSetLayout };
+        std::array<VkDescriptorSetLayout, 1> setLayouts = { m_DescriptorSetLayout->GetVkHandle() };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
-        vkCreatePipelineLayout(m_Device->GetVkHandle(), &pipelineLayoutCI, nullptr, &m_VkPipelineLayout);
+        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Device, &pipelineLayoutCI);
 
         // Descriptor set
-        VkDescriptorSetAllocateInfo allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_VkDescriptorPool, &m_VkDescriptorSetLayout, 1);
-        vkAllocateDescriptorSets(m_Device->GetVkHandle(), &allocInfo, &m_VkDescriptorSet);
+        VkDescriptorSetAllocateInfo allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_DescriptorSetLayout->GetVkHandle(), 1);
+        m_DescriptorSet = CreateRef<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -111,8 +108,8 @@ namespace VKT {
         imageInfo.sampler = m_CheckerBoardTex->GetSampler().GetVkHandle();
 
         std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
-            Vulkan::Initializers::writeDescriptorSet(m_VkDescriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &m_UniformBuffer->GetDescriptor()),
-            Vulkan::Initializers::writeDescriptorSet(m_VkDescriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &imageInfo)
+            Vulkan::Initializers::writeDescriptorSet(m_DescriptorSet->GetVkHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &m_UniformBuffer->GetDescriptor()),
+            Vulkan::Initializers::writeDescriptorSet(m_DescriptorSet->GetVkHandle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &imageInfo)
             };
 
         vkUpdateDescriptorSets(m_Device->GetVkHandle(), writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
@@ -129,24 +126,16 @@ namespace VKT {
         VkPipelineDynamicStateCreateInfo dynamicStateCI = Vulkan::Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{
-            m_VertShader->GetShaderModule().CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
-            m_FragShader->GetShaderModule().CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
+            m_VertShader->CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
+            m_FragShader->CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
         };
-        
-        const std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
-            Vulkan::Initializers::vertexInputBindingDescription(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX),
-        };
-        const std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            Vulkan::Initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Position)),
-            Vulkan::Initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Normal)),
-            Vulkan::Initializers::vertexInputAttributeDescription(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Tangent)),
-            Vulkan::Initializers::vertexInputAttributeDescription(0, 3, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Bitangent)),
-            Vulkan::Initializers::vertexInputAttributeDescription(0, 4, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, a_TexCoord)),
-        };
+
+        auto vertexInputBindings = Vertex::GetBindingDescription();
+        auto vertexInputAttributes = Vertex::GetAttributeDescriptions();
         
         VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
 
-        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_VkPipelineLayout, m_RenderPass->GetVkHandle(), 0);
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_RenderPass->GetVkHandle(), 0);
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pRasterizationState = &rasterizationStateCI;
@@ -158,7 +147,7 @@ namespace VKT {
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.pDynamicState = &dynamicStateCI;
 
-        vkCreateGraphicsPipelines(m_Device->GetVkHandle(), nullptr, 1, &pipelineCI, nullptr, &m_VkGraphicsPipeline);
+        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Device, &pipelineCI);
 
         return 0;
     }
@@ -224,7 +213,7 @@ namespace VKT {
 
         // Draw Call
         {
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_VkGraphicsPipeline);
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
 
             VkBuffer vertexBuffers[] = { m_VertexBuffer->GetBuffer().GetVkHandle() };
             VkDeviceSize offsets[] = {0};
@@ -233,8 +222,8 @@ namespace VKT {
             vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_VkPipelineLayout, 0, 1,
-                                    &m_VkDescriptorSet, 0, nullptr);
+                                    m_PipelineLayout->GetVkHandle(), 0, 1,
+                                    &m_DescriptorSet->GetVkHandle(), 0, nullptr);
 
             vkCmdDrawIndexed(vkCommandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
         }

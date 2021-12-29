@@ -1,23 +1,11 @@
 #include "PipelineLayout.h"
 
-#include "DescriptorSetLayout.h"
-#include "Device.h"
-
 namespace VKT::Vulkan {
 
-    PipelineLayout::PipelineLayout(const Device &device, const DescriptorSetLayout &descriptorSetLayout) :
-        m_Device(device)
+    PipelineLayout::PipelineLayout(const Device &device, VkPipelineLayoutCreateInfo *pipelineLayoutInfo)
+        : m_Device(device)
     {
-        VkDescriptorSetLayout descriptorSetLayouts[] = { descriptorSetLayout.GetVkHandle() };
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
-        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-        Check(vkCreatePipelineLayout(m_Device.GetVkHandle(), &pipelineLayoutInfo, nullptr, &m_VkPipelineLayout));
+        Check(vkCreatePipelineLayout(m_Device.GetVkHandle(), pipelineLayoutInfo, nullptr, &m_VkPipelineLayout));
     }
 
     PipelineLayout::~PipelineLayout()

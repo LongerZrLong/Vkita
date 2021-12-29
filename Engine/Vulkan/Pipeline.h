@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Common.h"
+#include "Device.h"
 
 namespace VKT::Vulkan {
-
-    class Device;
 
     class Pipeline
     {
     public:
         NON_COPIABLE(Pipeline);
 
-        Pipeline(const Device &device, VkGraphicsPipelineCreateInfo pipelineCreateInfo);
+        Pipeline(const Device &device, VkGraphicsPipelineCreateInfo *pipelineCreateInfo);
         ~Pipeline();
 
     private:

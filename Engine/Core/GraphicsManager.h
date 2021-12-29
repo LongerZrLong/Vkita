@@ -21,14 +21,18 @@
 #include "Vulkan/Enumerate.h"
 #include "Vulkan/Version.h"
 #include "Vulkan/Strings.h"
+#include "Vulkan/DescriptorPool.h"
+#include "Vulkan/DescriptorSetLayout.h"
+#include "Vulkan/DescriptorSet.h"
+#include "Vulkan/Pipeline.h"
+#include "Vulkan/PipelineLayout.h"
+#include "Vulkan/ShaderModule.h"
 
 // Temporary
-#include "Renderer/GraphicsPipeline.h"
 #include "Renderer/VulkanBuffer.h"
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/IndexBuffer.h"
 #include "Renderer/Texture2D.h"
-#include "Renderer/DescriptorBinding.h"
 
 namespace VKT {
 
@@ -77,8 +81,6 @@ namespace VKT {
         void SetPhysicalDevice(VkPhysicalDevice physicalDevice);
 
     private:
-        friend class Renderer;
-
         Scope<Vulkan::Instance> m_Instance;
         Scope<Vulkan::DebugUtilsMessenger> m_DebugUtilsMessenger;
         Scope<Vulkan::Surface> m_Surface;
@@ -103,20 +105,19 @@ namespace VKT {
         uint32_t m_CurrentImageIndex{};
 
         // TODO: Delete Testing Code
-        VkDescriptorPool m_VkDescriptorPool;
-        VkDescriptorSetLayout m_VkDescriptorSetLayout;
-        VkDescriptorSet m_VkDescriptorSet;
+        Ref<Vulkan::DescriptorPool> m_DescriptorPool;
+        Ref<Vulkan::DescriptorSetLayout> m_DescriptorSetLayout;
+        Ref<Vulkan::DescriptorSet> m_DescriptorSet;
 
-        VkPipelineLayout m_VkPipelineLayout;
-        VkPipeline m_VkGraphicsPipeline;
+        Ref<Vulkan::PipelineLayout> m_PipelineLayout;
+        Ref<Vulkan::Pipeline> m_GraphicsPipeline;
 
-        Ref<Shader> m_VertShader;
-        Ref<Shader> m_FragShader;
+        Ref<Vulkan::ShaderModule> m_VertShader;
+        Ref<Vulkan::ShaderModule> m_FragShader;
 
         Ref<VertexBuffer> m_VertexBuffer;
         Ref<IndexBuffer> m_IndexBuffer;
 
-        Ref<DescriptorSetManager> m_DescriptorSetManager;
         Ref<VulkanBuffer> m_UniformBuffer;
         Ref<Texture2D> m_CheckerBoardTex;
 
