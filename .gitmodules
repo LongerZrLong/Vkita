@@ -10,3 +10,6 @@
 [submodule "Engine/External/Assimp"]
 	path = Engine/External/Assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "Engine/External/ktx"]
+	path = Engine/External/ktx
+	url = https://github.com/KhronosGroup/KTX-Software.git

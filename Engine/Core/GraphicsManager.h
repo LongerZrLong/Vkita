@@ -24,9 +24,10 @@
 
 // Temporary
 #include "Renderer/GraphicsPipeline.h"
-#include "Renderer/Buffer.h"
+#include "Renderer/VulkanBuffer.h"
+#include "Renderer/VertexBuffer.h"
+#include "Renderer/IndexBuffer.h"
 #include "Renderer/Texture2D.h"
-#include "Renderer/UniformBuffer.h"
 #include "Renderer/DescriptorBinding.h"
 
 namespace VKT {
@@ -111,7 +112,7 @@ namespace VKT {
         Ref<IndexBuffer> m_IndexBuffer;
 
         Ref<DescriptorSetManager> m_DescriptorSetManager;
-        Ref<UniformBuffer> m_UniformBuffer;
+        Ref<VulkanBuffer> m_UniformBuffer;
         Ref<Texture2D> m_CheckerBoardTex;
 
     };

@@ -1,7 +1,7 @@
 #include "DescriptorSetManager.h"
 
 #include "DescriptorBinding.h"
-#include "UniformBuffer.h"
+#include "VulkanBuffer.h"
 #include "Texture2D.h"
 
 #include "Core/Base.h"
@@ -28,7 +28,7 @@ namespace VKT {
             {
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                 {
-                    auto *ptr = reinterpret_cast<UniformBuffer*>(binding.DescriptorPtr);
+                    auto *ptr = reinterpret_cast<VulkanBuffer*>(binding.DescriptorPtr);
 
                     VkDescriptorBufferInfo uniformBufferInfo = {};
                     uniformBufferInfo.buffer = ptr->GetBuffer().GetVkHandle();

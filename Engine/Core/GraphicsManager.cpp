@@ -7,10 +7,19 @@
 
 #include "Application/Application.h"
 
+#include "Math/Glm.h"
+
 // Temporary
 #include <array>
 
 namespace VKT {
+
+    struct UniformBufferObject
+    {
+        alignas(16) glm::mat4 Model;
+        alignas(16) glm::mat4 View;
+        alignas(16) glm::mat4 Proj;
+    };
 
     int GraphicsManager::Initialize()
     {
@@ -47,13 +56,15 @@ namespace VKT {
         m_VertexBuffer = CreateRef<VertexBuffer>(vertices);
         m_IndexBuffer = CreateRef<IndexBuffer>(indices);
 
-        m_UniformBuffer = CreateRef<UniformBuffer>();
+        m_UniformBuffer = CreateRef<VulkanBuffer>(sizeof(UniformBufferObject),
+                                                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         UniformBufferObject ubo = {};
         ubo.Model = glm::mat4(1.0f);
         ubo.View = glm::mat4(1.0f);
         ubo.Proj = glm::mat4(1.0f);
-        m_UniformBuffer->Update(ubo);
+        m_UniformBuffer->Update(&ubo);
 
         Image img = Image(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
         m_CheckerBoardTex = CreateRef<Texture2D>(img);
@@ -69,7 +80,7 @@ namespace VKT {
         m_DescriptorSetManager = CreateRef<DescriptorSetManager>(descriptorBindings);
 
         m_GraphicsPipeline = CreateRef<GraphicsPipeline>(m_VertShader, m_FragShader, m_DescriptorSetManager);
-        
+
         return 0;
     }
 
@@ -143,7 +154,7 @@ namespace VKT {
 
         ubo.Proj = glm::mat4(1.0f);
 
-        m_UniformBuffer->Update(ubo);
+        m_UniformBuffer->Update(&ubo);
 
         vkCmdEndRenderPass(vkCommandBuffer);
 

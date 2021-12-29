@@ -11,6 +11,7 @@
 #include "Core/Base.h"
 
 #include "Renderer/Texture2D.h"
+#include "Renderer/Vertex.h"
 
 namespace VKT {
 

@@ -9,7 +9,7 @@
 public: \
 	VulkanHandleType GetVkHandle() const { return name; } \
 private: \
-	VulkanHandleType name{};
+	VulkanHandleType name{VK_NULL_HANDLE};
 
 namespace VKT::Vulkan
 {

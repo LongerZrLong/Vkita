@@ -25,9 +25,10 @@
 // Renderer
 #include "Renderer/DescriptorBinding.h"
 #include "Renderer/DescriptorSetManager.h"
-#include "Renderer/UniformBuffer.h"
 #include "Renderer/Vertex.h"
-#include "Renderer/Buffer.h"
+#include "Renderer/VulkanBuffer.h"
+#include "Renderer/VertexBuffer.h"
+#include "Renderer/IndexBuffer.h"
 #include "Renderer/GraphicsPipeline.h"
 #include "Renderer/Shader.h"
 #include "Renderer/Texture2D.h"

@@ -65,3 +65,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC stb_image)
 # Assimp
 add_subdirectory(External/Assimp)
 target_link_libraries(${PROJECT_NAME} PUBLIC assimp)
+
+# ktx
+add_subdirectory(External/ktx)
+target_link_libraries(${PROJECT_NAME} PUBLIC ktx)

@@ -2,7 +2,7 @@
 
 #include "Material.h"
 
-#include "Renderer/Buffer.h"
+#include "Renderer/VulkanBuffer.h"
 
 namespace VKT {
 

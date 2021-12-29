@@ -1,6 +1,5 @@
 #include "Shader.h"
 
-#include "Core/FileSystem.h"
 #include "Core/GraphicsManager.h"
 
 #include "Vulkan/ShaderModule.h"
