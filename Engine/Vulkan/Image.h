@@ -22,15 +22,14 @@ namespace VKT::Vulkan {
 		Image& operator = (const Image&) = delete;
 		Image& operator = (Image&&) = delete;
 
-		const Device &GetDevice() const { return m_Device; }
 		VkExtent2D GetVkExtent2D() const { return m_VkExtent2D; }
 		VkFormat GetVkFormat() const { return m_VkFormat; }
 
 		DeviceMemory AllocateMemory(VkMemoryPropertyFlags propertyFlags) const;
 		VkMemoryRequirements GetVkMemoryRequirements() const;
 
-		void TransitionImageLayout(const CommandPool &commandPool, VkImageLayout newLayout);
-		void CopyFrom(const CommandPool &commandPool, const Buffer &buffer);
+		void TransitionImageLayout(const Device &device, const CommandPool &commandPool, VkImageLayout newLayout);
+		void CopyFrom(const Device &device, const CommandPool &commandPool, const Buffer &buffer);
 
 	private:
         VULKAN_HANDLE(VkImage, m_VkImage);

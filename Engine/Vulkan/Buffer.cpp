@@ -61,7 +61,7 @@ namespace VKT::Vulkan {
 
     void Buffer::CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size)
     {
-        SingleTimeCommands::Submit(commandPool, [&](VkCommandBuffer commandBuffer)
+        SingleTimeCommands::Submit(m_Device, commandPool, [&](VkCommandBuffer commandBuffer)
         {
             VkBufferCopy copyRegion = {};
             copyRegion.srcOffset = 0; // Optional

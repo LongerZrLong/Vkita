@@ -75,9 +75,9 @@ namespace VKT::Vulkan {
         return requirements;
     }
 
-    void Image::TransitionImageLayout(const CommandPool &commandPool, VkImageLayout newLayout)
+    void Image::TransitionImageLayout(const Device &device, const CommandPool &commandPool, VkImageLayout newLayout)
     {
-        SingleTimeCommands::Submit(commandPool, [&](VkCommandBuffer commandBuffer)
+        SingleTimeCommands::Submit(device, commandPool, [&](VkCommandBuffer commandBuffer)
         {
             VkImageMemoryBarrier barrier = {};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -143,9 +143,9 @@ namespace VKT::Vulkan {
         m_VkImageLayout = newLayout;
     }
 
-    void Image::CopyFrom(const CommandPool &commandPool, const Buffer &buffer)
+    void Image::CopyFrom(const Device &device, const CommandPool &commandPool, const Buffer &buffer)
     {
-        SingleTimeCommands::Submit(commandPool, [&](VkCommandBuffer commandBuffer)
+        SingleTimeCommands::Submit(device, commandPool, [&](VkCommandBuffer commandBuffer)
         {
             VkBufferImageCopy region = {};
             region.bufferOffset = 0;

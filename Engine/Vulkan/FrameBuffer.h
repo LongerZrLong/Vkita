@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Common.h"
+#include "Device.h"
+#include "RenderPass.h"
+#include "ImageView.h"
 
 namespace VKT::Vulkan {
-
-    class ImageView;
-    class RenderPass;
 
     class FrameBuffer
     {
@@ -14,7 +14,7 @@ namespace VKT::Vulkan {
         FrameBuffer &operator = (const FrameBuffer&) = delete;
         FrameBuffer &operator = (FrameBuffer&&) = delete;
 
-        explicit FrameBuffer(const ImageView &imageView, const RenderPass &renderPass);
+        FrameBuffer(const Device &device, const ImageView &imageView, const RenderPass &renderPass);
         FrameBuffer(FrameBuffer &&other) noexcept;
         ~FrameBuffer();
 
@@ -24,6 +24,7 @@ namespace VKT::Vulkan {
     private:
         VULKAN_HANDLE(VkFramebuffer, m_VkFramebuffer);
 
+        const Device &m_Device;
         const ImageView &m_ImageView;
         const RenderPass &m_RenderPass;
     };

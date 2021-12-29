@@ -2,16 +2,14 @@
 
 #include <array>
 
-#include "DepthBuffer.h"
-#include "Device.h"
 #include "ImageView.h"
-#include "RenderPass.h"
+#include "DepthBuffer.h"
 #include "SwapChain.h"
 
 namespace VKT::Vulkan {
 
-    FrameBuffer::FrameBuffer(const ImageView &imageView, const RenderPass &renderPass)
-        : m_ImageView(imageView), m_RenderPass(renderPass)
+    FrameBuffer::FrameBuffer(const Device &device, const ImageView &imageView, const RenderPass &renderPass)
+        : m_Device(device), m_ImageView(imageView), m_RenderPass(renderPass)
     {
         std::array<VkImageView, 2> attachments =
             {
@@ -28,13 +26,14 @@ namespace VKT::Vulkan {
         framebufferInfo.height = renderPass.GetSwapChain().GetVkExtent2D().height;
         framebufferInfo.layers = 1;
 
-        Check(vkCreateFramebuffer(m_ImageView.GetDevice().GetVkHandle(), &framebufferInfo, nullptr, &m_VkFramebuffer));
+        Check(vkCreateFramebuffer(device.GetVkHandle(), &framebufferInfo, nullptr, &m_VkFramebuffer));
     }
 
-    FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept :
-        m_ImageView(other.m_ImageView),
-        m_RenderPass(other.m_RenderPass),
-        m_VkFramebuffer(other.m_VkFramebuffer)
+    FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept
+    : m_Device(other.m_Device),
+      m_ImageView(other.m_ImageView),
+      m_RenderPass(other.m_RenderPass),
+      m_VkFramebuffer(other.m_VkFramebuffer)
     {
         other.m_VkFramebuffer = nullptr;
     }
@@ -43,7 +42,7 @@ namespace VKT::Vulkan {
     {
         if (m_VkFramebuffer != nullptr)
         {
-            vkDestroyFramebuffer(m_ImageView.GetDevice().GetVkHandle(), m_VkFramebuffer, nullptr);
+            vkDestroyFramebuffer(m_Device.GetVkHandle(), m_VkFramebuffer, nullptr);
             m_VkFramebuffer = nullptr;
         }
     }

@@ -95,6 +95,30 @@ namespace VKT::Vulkan {
         }
     }
 
+    VkResult SwapChain::AcquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex)
+    {
+        return vkAcquireNextImageKHR(m_Device.GetVkHandle(), m_VkSwapchain, UINT64_MAX, presentCompleteSemaphore, VK_NULL_HANDLE, imageIndex);
+    }
+
+    VkResult SwapChain::QueuePresent(VkQueue presentQueue, uint32_t imageIndex, VkSemaphore waitSemaphore)
+    {
+        VkSemaphore waitSemaphores[] = { waitSemaphore };
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = waitSemaphores;
+
+        VkSwapchainKHR swapChains[] = { m_VkSwapchain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+
+        presentInfo.pImageIndices = &imageIndex;
+
+        return vkQueuePresentKHR(presentQueue, &presentInfo);
+    }
+
     SwapChain::SupportDetails SwapChain::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface)
     {
         SupportDetails details;

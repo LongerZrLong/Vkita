@@ -14,11 +14,7 @@ namespace VKT::Vulkan {
 		explicit DebugUtils(VkInstance vkInstance);
 		~DebugUtils() = default;
 
-
-		void SetDevice(VkDevice device)
-		{
-            m_VkDevice = device;
-		}
+		void SetDevice(VkDevice device) { m_VkDevice = device; }
 
 		void SetObjectName(const VkAccelerationStructureKHR &object, const char* name) const { SetObjectName(object, name, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR); }
 		void SetObjectName(const VkBuffer &object, const char* name) const { SetObjectName(object, name, VK_OBJECT_TYPE_BUFFER); }

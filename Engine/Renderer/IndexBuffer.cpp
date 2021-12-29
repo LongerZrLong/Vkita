@@ -12,9 +12,10 @@ namespace VKT {
         : m_Count(indices.size())
     {
         auto flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
         const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
         size_t size = sizeof(indices[0]) * m_Count;
-        Vulkan::BufferUtil::CreateDeviceBuffer(commandPool, "indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
+        Vulkan::BufferUtil::CreateDeviceBuffer(device, commandPool, "indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
     }
 
     IndexBuffer::IndexBuffer(IndexBuffer &&other) noexcept

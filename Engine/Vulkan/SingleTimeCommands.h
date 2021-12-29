@@ -11,9 +11,9 @@ namespace VKT::Vulkan {
     class SingleTimeCommands
     {
     public:
-        static void Submit(const CommandPool& commandPool, const std::function<void(VkCommandBuffer)>& action)
+        static void Submit(const Device &device, const CommandPool& commandPool, const std::function<void(VkCommandBuffer)>& action)
         {
-            CommandBuffers commandBuffers(commandPool, 1);
+            CommandBuffers commandBuffers(device, commandPool, 1);
 
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -30,7 +30,7 @@ namespace VKT::Vulkan {
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffers[0];
 
-            const auto graphicsQueue = commandPool.GetDevice().GetGraphicsQueue();
+            const auto graphicsQueue = device.GetGraphicsQueue();
 
             vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr);
             vkQueueWaitIdle(graphicsQueue);

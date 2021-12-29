@@ -22,14 +22,16 @@ namespace VKT::Vulkan {
         SwapChain(const Device &device, VkPresentModeKHR presentMode);
         ~SwapChain();
 
-        VkPhysicalDevice GetVkPhysicalDevice() const { return m_VkPhysicalDevice; }
-        const Device &GetDevice() const { return m_Device; }
-        uint32_t GetMinImageCount() const { return m_MinImageCount; }
+        VkResult AcquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex);
+        VkResult QueuePresent(VkQueue presentQueue, uint32_t imageIndex, VkSemaphore waitSemaphore);
+
+        const VkPhysicalDevice &GetVkPhysicalDevice() const { return m_VkPhysicalDevice; }
+        const uint32_t &GetMinImageCount() const { return m_MinImageCount; }
         const std::vector<VkImage> &GetVkImages() const { return m_VkImages; }
-        const std::vector<std::unique_ptr<ImageView>> &GetImageViews() const { return m_ImageViews; }
+        const std::vector<Scope<ImageView>> &GetImageViews() const { return m_ImageViews; }
         const VkExtent2D &GetVkExtent2D() const { return m_VkExtent2D; }
-        VkFormat GetVkFormat() const { return m_VkFormat; }
-        VkPresentModeKHR GetVkPresentMode() const { return m_VkPresentMode; }
+        const VkFormat &GetVkFormat() const { return m_VkFormat; }
+        const VkPresentModeKHR &GetVkPresentMode() const { return m_VkPresentMode; }
 
     private:
         struct SupportDetails

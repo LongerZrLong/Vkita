@@ -16,8 +16,6 @@ namespace VKT::Vulkan {
         Buffer(const Device &device, size_t size, VkBufferUsageFlags usageFlags);
         ~Buffer();
 
-        const Device &GetDevice() const { return m_Device; }
-
         DeviceMemory AllocateMemory(VkMemoryPropertyFlags propertyFlags);
         DeviceMemory AllocateMemory(VkMemoryAllocateFlags allocateFlags, VkMemoryPropertyFlags propertyFlags);
 

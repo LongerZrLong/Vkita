@@ -18,8 +18,6 @@ namespace VKT::Vulkan {
         ShaderModule(const Device &device, const std::vector<char> &code);
         ~ShaderModule();
 
-        const Device &GetDevice() const { return m_Device; }
-
         VkPipelineShaderStageCreateInfo CreateShaderStage(VkShaderStageFlagBits stage) const;
 
     private:

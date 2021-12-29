@@ -15,9 +15,15 @@ namespace VKT::Vulkan {
     class BufferUtil
     {
     public:
-        static void CopyFromStagingBuffer(const CommandPool &commandPool, Buffer &dstBuffer, size_t size, void *data);
+        static void CopyFromStagingBuffer(
+            const Device &device,
+            const CommandPool &commandPool,
+            Buffer &dstBuffer,
+            size_t size,
+            void *data);
 
         static void CreateDeviceBuffer(
+            const Device &device,
             const CommandPool &commandPool,
             const char *name,
             VkBufferUsageFlags usage,

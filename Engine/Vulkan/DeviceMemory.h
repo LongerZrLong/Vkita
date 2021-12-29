@@ -17,8 +17,6 @@ namespace VKT::Vulkan {
         DeviceMemory(DeviceMemory &&other) noexcept;
         ~DeviceMemory();
 
-        const Device &GetDevice() const { return m_Device; }
-
         void *Map(size_t offset, size_t size);
         void Unmap();
 

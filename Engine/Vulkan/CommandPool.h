@@ -14,8 +14,6 @@ namespace VKT::Vulkan {
         CommandPool(const Device &device, uint32_t queueFamilyIndex, bool allowReset);
         ~CommandPool();
 
-        const Device &GetDevice() const { return m_Device; }
-
     private:
         VULKAN_HANDLE(VkCommandPool, m_VkCommandPool);
 

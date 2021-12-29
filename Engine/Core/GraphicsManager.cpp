@@ -177,7 +177,7 @@ namespace VKT {
         // TODO: Delete Testing Code
         VkCommandBuffer vkCommandBuffer = m_CommandBuffers->Begin(m_CurrentImageIndex);
 
-        VkRenderPassBeginInfo renderPassBeginInfo{};
+        VkRenderPassBeginInfo renderPassBeginInfo = Vulkan::Initializers::renderPassBeginInfo();
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = m_RenderPass->GetVkHandle();
         renderPassBeginInfo.framebuffer = m_FrameBuffers[m_CurrentImageIndex]->GetVkHandle();
@@ -266,7 +266,6 @@ namespace VKT {
         requiredExtensions.push_back("VK_KHR_portability_subset");
 #endif
 
-        // TODO: Currently enable Anisotropy in Device and Sampler separately
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
         deviceFeatures.sampleRateShading = VK_TRUE;
@@ -315,15 +314,15 @@ namespace VKT {
         }
 
         m_SwapChain = CreateScope<Vulkan::SwapChain>(*m_Device, Config::kVkPresentMode);
-        m_DepthBuffer = CreateScope<Vulkan::DepthBuffer>(*m_CommandPool, m_SwapChain->GetVkExtent2D());
-        m_RenderPass = CreateScope<Vulkan::RenderPass>(*m_SwapChain, *m_DepthBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
+        m_DepthBuffer = CreateScope<Vulkan::DepthBuffer>(*m_Device, *m_CommandPool, m_SwapChain->GetVkExtent2D());
+        m_RenderPass = CreateScope<Vulkan::RenderPass>(*m_Device, *m_SwapChain, *m_DepthBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
 
         for (const auto &imageView : m_SwapChain->GetImageViews())
         {
-            m_FrameBuffers.emplace_back(CreateScope<Vulkan::FrameBuffer>(*imageView, *m_RenderPass));
+            m_FrameBuffers.emplace_back(CreateScope<Vulkan::FrameBuffer>(*m_Device, *imageView, *m_RenderPass));
         }
 
-        m_CommandBuffers = CreateScope<Vulkan::CommandBuffers>(*m_CommandPool, m_FrameBuffers.size());
+        m_CommandBuffers = CreateScope<Vulkan::CommandBuffers>(*m_Device, *m_CommandPool, m_FrameBuffers.size());
 
         m_ImagesInFlight.resize(m_SwapChain->GetVkImages().size(), VK_NULL_HANDLE);
     }
@@ -384,7 +383,7 @@ namespace VKT {
         vkWaitForFences(m_Device->GetVkHandle(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(m_Device->GetVkHandle(), m_SwapChain->GetVkHandle(), UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = m_SwapChain->AcquireNextImage(m_ImageAvailableSemaphores[m_CurrentFrame], &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -411,8 +410,7 @@ namespace VKT {
 
     void GraphicsManager::EndFrame()
     {
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSubmitInfo submitInfo = Vulkan::Initializers::submitInfo();
 
         VkCommandBuffer commandBuffers[] = { (*m_CommandBuffers)[m_CurrentImageIndex] };
         VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
@@ -442,21 +440,7 @@ namespace VKT {
     void GraphicsManager::Present()
     {
         size_t prevFrame = (m_CurrentFrame - 1) % Config::kMaxInFlightFrameCount;
-        VkSemaphore waitSemaphores[] = { m_RenderFinishedSemaphores[prevFrame] };
-
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = waitSemaphores;
-
-        VkSwapchainKHR swapChains[] = {m_SwapChain->GetVkHandle()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-
-        presentInfo.pImageIndices = &m_CurrentImageIndex;
-
-        VkResult result = vkQueuePresentKHR(m_Device->GetPresentQueue(), &presentInfo);
+        VkResult result = m_SwapChain->QueuePresent(m_Device->GetPresentQueue(), m_CurrentImageIndex, m_RenderFinishedSemaphores[prevFrame]);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {

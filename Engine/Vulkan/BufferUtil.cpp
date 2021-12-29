@@ -2,9 +2,13 @@
 
 namespace VKT::Vulkan {
 
-    void BufferUtil::CopyFromStagingBuffer(const CommandPool &commandPool, Buffer &dstBuffer, size_t size, void *data)
+    void BufferUtil::CopyFromStagingBuffer(
+        const Device &device,
+        const CommandPool &commandPool,
+        Buffer &dstBuffer,
+        size_t size,
+        void *data)
     {
-        const auto &device = commandPool.GetDevice();
         const auto contentSize = size;
 
         // Create a temporary host-visible staging buffer.
@@ -24,6 +28,7 @@ namespace VKT::Vulkan {
     }
 
     void BufferUtil::CreateDeviceBuffer(
+        const Device &device,
         const CommandPool &commandPool,
         const char *const name,
         const VkBufferUsageFlags usage,
@@ -32,7 +37,6 @@ namespace VKT::Vulkan {
         Scope<Buffer> &buffer,
         Scope<DeviceMemory> &memory)
     {
-        const auto &device = commandPool.GetDevice();
         const auto &debugUtils = device.GetDebugUtils();
         const auto contentSize = size;
         const VkMemoryAllocateFlags allocateFlags = usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
@@ -45,7 +49,7 @@ namespace VKT::Vulkan {
         debugUtils.SetObjectName(buffer->GetVkHandle(), (name + std::string(" Buffer")).c_str());
         debugUtils.SetObjectName(memory->GetVkHandle(), (name + std::string(" Memory")).c_str());
 
-        CopyFromStagingBuffer(commandPool, *buffer, size, data);
+        CopyFromStagingBuffer(device, commandPool, *buffer, size, data);
     }
 
 }

@@ -44,16 +44,14 @@ namespace VKT::Vulkan {
         }
     }
 
-    DepthBuffer::DepthBuffer(CommandPool &commandPool, const VkExtent2D extent)
-        : m_VkFormat(FindDepthFormat(commandPool.GetDevice()))
+    DepthBuffer::DepthBuffer(const Device &device, const CommandPool &commandPool, const VkExtent2D extent)
+        : m_VkFormat(FindDepthFormat(device))
     {
-        const auto &device = commandPool.GetDevice();
-
         m_Image = CreateScope<Image>(device, extent, m_VkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         m_DeviceMemory = CreateScope<DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
         m_ImageView = CreateScope<ImageView>(device, m_Image->GetVkHandle(), m_VkFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        m_Image->TransitionImageLayout(commandPool, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        m_Image->TransitionImageLayout(device, commandPool, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
         const auto &debugUtils = device.GetDebugUtils();
 
@@ -66,7 +64,7 @@ namespace VKT::Vulkan {
     {
         m_ImageView.reset();
         m_Image.reset();
-        m_DeviceMemory.reset(); // release memory after bound image has been destroyed
+        m_DeviceMemory.reset();
     }
 
 }

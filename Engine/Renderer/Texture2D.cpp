@@ -28,8 +28,8 @@ namespace VKT {
 
     void Texture2D::SetData(void *data, uint32_t size)
     {
-        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
         const Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
 
         // Create a host staging buffer and copy the image into it.
         VkDeviceSize imageSize = size;
@@ -41,9 +41,9 @@ namespace VKT {
         stagingBufferMemory.Unmap();
 
         // Transfer the data to device side.
-        m_Image->TransitionImageLayout(commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        m_Image->CopyFrom(commandPool, *stagingBuffer);
-        m_Image->TransitionImageLayout(commandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_Image->TransitionImageLayout(device, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        m_Image->CopyFrom(device, commandPool, *stagingBuffer);
+        m_Image->TransitionImageLayout(device, commandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         // Delete the buffer before the memory
         stagingBuffer.reset();
@@ -57,7 +57,26 @@ namespace VKT {
         m_Image = CreateScope<Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);
         m_DeviceMemory = CreateScope<Vulkan::DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
         m_ImageView = CreateScope<Vulkan::ImageView>(device, m_Image->GetVkHandle(), m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
-        m_Sampler = CreateScope<Vulkan::Sampler>(device, Vulkan::SamplerConfig());
+
+        VkSamplerCreateInfo samplerInfo = {};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_NEAREST;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.anisotropyEnable = true;
+        samplerInfo.maxAnisotropy = 16;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = false;
+        samplerInfo.compareEnable = false;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        m_Sampler = CreateScope<Vulkan::Sampler>(device, &samplerInfo);
     }
 
     Texture2D::~Texture2D()

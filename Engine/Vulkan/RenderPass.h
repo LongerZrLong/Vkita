@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Device.h"
 
 namespace VKT::Vulkan {
 
@@ -12,7 +13,7 @@ namespace VKT::Vulkan {
     public:
         NON_COPIABLE(RenderPass);
 
-        RenderPass(const SwapChain &swapChain, const DepthBuffer &depthBuffer, VkAttachmentLoadOp colorBufferLoadOp, VkAttachmentLoadOp depthBufferLoadOp);
+        RenderPass(const Device &device, const SwapChain &swapChain, const DepthBuffer &depthBuffer, VkAttachmentLoadOp colorBufferLoadOp, VkAttachmentLoadOp depthBufferLoadOp);
         ~RenderPass();
 
         const SwapChain &GetSwapChain() const { return m_SwapChain; }
@@ -21,6 +22,7 @@ namespace VKT::Vulkan {
     private:
         VULKAN_HANDLE(VkRenderPass, m_VkRenderPass);
 
+        const Device &m_Device;
         const SwapChain &m_SwapChain;
         const DepthBuffer &m_DepthBuffer;
 

@@ -17,7 +17,7 @@ namespace VKT::Vulkan {
     public:
         NON_COPIABLE(DepthBuffer);
 
-        DepthBuffer(CommandPool &commandPool, VkExtent2D extent);
+        DepthBuffer(const Device &device, const CommandPool &commandPool, VkExtent2D extent);
         ~DepthBuffer();
 
         VkFormat Format() const { return m_VkFormat; }
@@ -30,9 +30,9 @@ namespace VKT::Vulkan {
 
     private:
         const VkFormat m_VkFormat;
-        std::unique_ptr<Image> m_Image;
-        std::unique_ptr<DeviceMemory> m_DeviceMemory;
-        std::unique_ptr<ImageView> m_ImageView;
+        Scope<Image> m_Image;
+        Scope<DeviceMemory> m_DeviceMemory;
+        Scope<ImageView> m_ImageView;
 
     };
 
