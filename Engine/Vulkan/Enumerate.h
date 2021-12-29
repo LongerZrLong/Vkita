@@ -9,10 +9,10 @@ namespace  VKT::Vulkan {
     inline void GetEnumerateVector(VkResult(enumerate) (uint32_t*, TValue*), std::vector<TValue>& vector)
     {
         uint32_t count = 0;
-        Check(enumerate(&count, nullptr), "enumerate");
+        Check(enumerate(&count, nullptr));
 
         vector.resize(count);
-        Check(enumerate(&count, vector.data()), "enumerate");
+        Check(enumerate(&count, vector.data()));
     }
 
     template <class THandle, class TValue>
@@ -29,20 +29,20 @@ namespace  VKT::Vulkan {
     inline void GetEnumerateVector(THandle handle, VkResult(enumerate) (THandle, uint32_t*, TValue*), std::vector<TValue>& vector)
     {
         uint32_t count = 0;
-        Check(enumerate(handle, &count, nullptr), "enumerate");
+        Check(enumerate(handle, &count, nullptr));
 
         vector.resize(count);
-        Check(enumerate(handle, &count, vector.data()), "enumerate");
+        Check(enumerate(handle, &count, vector.data()));
     }
 
     template <class THandle1, class THandle2, class TValue>
     inline void GetEnumerateVector(THandle1 handle1, THandle2 handle2, VkResult(enumerate) (THandle1, THandle2, uint32_t*, TValue*), std::vector<TValue>& vector)
     {
         uint32_t count = 0;
-        Check(enumerate(handle1, handle2, &count, nullptr), "enumerate");
+        Check(enumerate(handle1, handle2, &count, nullptr));
 
         vector.resize(count);
-        Check(enumerate(handle1, handle2, &count, vector.data()), "enumerate");
+        Check(enumerate(handle1, handle2, &count, vector.data()));
     }
 
     template <class TValue>

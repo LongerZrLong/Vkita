@@ -41,7 +41,7 @@ namespace VKT::Vulkan {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
-        Vulkan::Check(vkCreateInstance(&createInfo, nullptr, &m_VkInstance), "create instance");
+        Check(vkCreateInstance(&createInfo, nullptr, &m_VkInstance));
 
         GetVulkanPhysicalDevices();
         GetVulkanLayers();
@@ -95,7 +95,7 @@ namespace VKT::Vulkan {
     void Instance::CheckVulkanMinimumVersion(const uint32_t minVersion)
     {
         uint32_t version;
-        Vulkan::Check(vkEnumerateInstanceVersion(&version), "query instance version");
+        Check(vkEnumerateInstanceVersion(&version));
 
         if (minVersion > version)
         {

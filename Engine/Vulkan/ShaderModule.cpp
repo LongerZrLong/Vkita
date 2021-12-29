@@ -19,8 +19,7 @@ namespace VKT::Vulkan {
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        Check(vkCreateShaderModule(device.GetVkHandle(), &createInfo, nullptr, &m_VkShaderModule),
-              "create shader module");
+        Check(vkCreateShaderModule(device.GetVkHandle(), &createInfo, nullptr, &m_VkShaderModule));
     }
 
     ShaderModule::~ShaderModule()

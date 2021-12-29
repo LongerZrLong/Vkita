@@ -4,11 +4,12 @@
 
 namespace VKT::Vulkan {
 
-    void Check(const VkResult result, const char* const operation)
+    void Check(const VkResult result)
     {
         if (result != VK_SUCCESS)
         {
-            throw std::runtime_error(std::string("failed to ") + operation + " (" + ToString(result) + ")");
+            std::cerr << "Fatal : VkResult is \"" << ToString(result) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";
+            assert(result == VK_SUCCESS);
         }
     }
 

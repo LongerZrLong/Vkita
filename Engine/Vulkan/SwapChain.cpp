@@ -61,8 +61,7 @@ namespace VKT::Vulkan {
             createInfo.pQueueFamilyIndices = nullptr; // Optional
         }
 
-        Check(vkCreateSwapchainKHR(device.GetVkHandle(), &createInfo, nullptr, &m_VkSwapchain),
-              "create swap chain!");
+        Check(vkCreateSwapchainKHR(device.GetVkHandle(), &createInfo, nullptr, &m_VkSwapchain));
 
         m_MinImageCount = details.Capabilities.minImageCount;
         m_VkPresentMode = actualPresentMode;

@@ -22,8 +22,7 @@ namespace VKT::Vulkan {
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        Check(vkCreateImageView(m_Device.GetVkHandle(), &createInfo, nullptr, &m_VkImageView),
-              "create image view");
+        Check(vkCreateImageView(m_Device.GetVkHandle(), &createInfo, nullptr, &m_VkImageView));
     }
 
     ImageView::~ImageView()

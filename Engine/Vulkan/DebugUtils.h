@@ -49,7 +49,7 @@ namespace VKT::Vulkan {
                 info.objectType = type;
                 info.pObjectName = name;
 
-                Check(vkSetDebugUtilsObjectNameEXT_(m_VkDevice, &info), "set object name");
+                Check(vkSetDebugUtilsObjectNameEXT_(m_VkDevice, &info));
             }
 		}
 

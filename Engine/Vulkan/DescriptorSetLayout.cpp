@@ -27,8 +27,7 @@ namespace VKT::Vulkan {
         layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
         layoutInfo.pBindings = layoutBindings.data();
 
-        Check(vkCreateDescriptorSetLayout(device.GetVkHandle(), &layoutInfo, nullptr, &m_VkDescriptorSetLayout),
-              "create descriptor set layout");
+        Check(vkCreateDescriptorSetLayout(device.GetVkHandle(), &layoutInfo, nullptr, &m_VkDescriptorSetLayout));
     }
 
     DescriptorSetLayout::~DescriptorSetLayout()

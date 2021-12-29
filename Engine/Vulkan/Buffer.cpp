@@ -15,8 +15,7 @@ namespace VKT::Vulkan {
         bufferInfo.usage = usageFlags;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        Check(vkCreateBuffer(device.GetVkHandle(), &bufferInfo, nullptr, &m_VkBuffer),
-              "create buffer");
+        Check(vkCreateBuffer(device.GetVkHandle(), &bufferInfo, nullptr, &m_VkBuffer));
     }
 
     Buffer::~Buffer()
@@ -38,8 +37,7 @@ namespace VKT::Vulkan {
         const auto requirements = GetVkMemoryRequirements();
         DeviceMemory memory(m_Device, requirements.size, requirements.memoryTypeBits, allocateFlags, propertyFlags);
 
-        Check(vkBindBufferMemory(m_Device.GetVkHandle(), m_VkBuffer, memory.GetVkHandle(), 0),
-              "bind buffer memory");
+        Check(vkBindBufferMemory(m_Device.GetVkHandle(), m_VkBuffer, memory.GetVkHandle(), 0));
 
         return memory;
     }

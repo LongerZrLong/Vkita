@@ -170,8 +170,7 @@ namespace VKT::Vulkan {
         createInfo.pfnUserCallback = VulkanDebugCallback;
         createInfo.pUserData = nullptr;
 
-        Check(CreateDebugUtilsMessengerEXT(m_Instance.GetVkHandle(), &createInfo, nullptr, &m_VkDebugUtilsMessenger),
-              "set up Vulkan debug callback");
+        Check(CreateDebugUtilsMessengerEXT(m_Instance.GetVkHandle(), &createInfo, nullptr, &m_VkDebugUtilsMessenger));
     }
 
     DebugUtilsMessenger::~DebugUtilsMessenger()

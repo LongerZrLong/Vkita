@@ -36,8 +36,7 @@ namespace VKT::Vulkan {
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
 
-        Check(vkCreateImage(device.GetVkHandle(), &imageInfo, nullptr, &m_VkImage),
-            "create image");
+        Check(vkCreateImage(device.GetVkHandle(), &imageInfo, nullptr, &m_VkImage));
     }
 
     Image::Image(Image &&other) noexcept
@@ -64,8 +63,7 @@ namespace VKT::Vulkan {
         const auto requirements = GetVkMemoryRequirements();
         DeviceMemory memory(m_Device, requirements.size, requirements.memoryTypeBits, 0, propertyFlags);
 
-        Check(vkBindImageMemory(m_Device.GetVkHandle(), m_VkImage, memory.GetVkHandle(), 0),
-            "bind image memory");
+        Check(vkBindImageMemory(m_Device.GetVkHandle(), m_VkImage, memory.GetVkHandle(), 0));
 
         return memory;
     }

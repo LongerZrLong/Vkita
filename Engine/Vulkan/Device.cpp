@@ -109,7 +109,7 @@ namespace VKT::Vulkan {
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-        Check(vkCreateDevice(vkPhysicalDevice, &createInfo, nullptr, &m_VkDevice), "create logical device");
+        Check(vkCreateDevice(vkPhysicalDevice, &createInfo, nullptr, &m_VkDevice));
 
         m_DebugUtils.SetDevice(m_VkDevice);
 
@@ -130,7 +130,7 @@ namespace VKT::Vulkan {
 
     void Device::WaitIdle() const
     {
-        Check(vkDeviceWaitIdle(m_VkDevice), "wait for device idle");
+        Check(vkDeviceWaitIdle(m_VkDevice));
     }
 
     void Device::CheckRequiredExtensions(VkPhysicalDevice physicalDevice, const std::vector<const char*> &requiredExtensions) const

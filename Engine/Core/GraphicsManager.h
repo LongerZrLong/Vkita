@@ -103,7 +103,12 @@ namespace VKT {
         uint32_t m_CurrentImageIndex{};
 
         // TODO: Delete Testing Code
-        Ref<GraphicsPipeline> m_GraphicsPipeline;
+        VkDescriptorPool m_VkDescriptorPool;
+        VkDescriptorSetLayout m_VkDescriptorSetLayout;
+        VkDescriptorSet m_VkDescriptorSet;
+
+        VkPipelineLayout m_VkPipelineLayout;
+        VkPipeline m_VkGraphicsPipeline;
 
         Ref<Shader> m_VertShader;
         Ref<Shader> m_FragShader;

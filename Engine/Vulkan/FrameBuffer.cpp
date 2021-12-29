@@ -28,8 +28,7 @@ namespace VKT::Vulkan {
         framebufferInfo.height = renderPass.GetSwapChain().GetVkExtent2D().height;
         framebufferInfo.layers = 1;
 
-        Check(vkCreateFramebuffer(m_ImageView.GetDevice().GetVkHandle(), &framebufferInfo, nullptr, &m_VkFramebuffer),
-              "create framebuffer");
+        Check(vkCreateFramebuffer(m_ImageView.GetDevice().GetVkHandle(), &framebufferInfo, nullptr, &m_VkFramebuffer));
     }
 
     FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept :

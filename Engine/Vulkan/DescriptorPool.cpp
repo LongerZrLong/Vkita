@@ -22,8 +22,7 @@ namespace VKT::Vulkan {
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = static_cast<uint32_t>(maxSets);
 
-        Check(vkCreateDescriptorPool(device.GetVkHandle(), &poolInfo, nullptr, &m_VkDescriptorPool),
-              "create descriptor pool");
+        Check(vkCreateDescriptorPool(device.GetVkHandle(), &poolInfo, nullptr, &m_VkDescriptorPool));
     }
 
     DescriptorPool::~DescriptorPool()

@@ -12,8 +12,7 @@ namespace VKT::Vulkan {
         poolInfo.queueFamilyIndex = queueFamilyIndex;
         poolInfo.flags = allowReset ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0;
 
-        Check(vkCreateCommandPool(device.GetVkHandle(), &poolInfo, nullptr, &m_VkCommandPool),
-              "create command pool");
+        Check(vkCreateCommandPool(device.GetVkHandle(), &poolInfo, nullptr, &m_VkCommandPool));
     }
 
     CommandPool::~CommandPool()

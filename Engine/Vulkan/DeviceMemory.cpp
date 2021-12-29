@@ -23,8 +23,7 @@ namespace VKT::Vulkan {
         allocInfo.allocationSize = size;
         allocInfo.memoryTypeIndex = FindMemoryType(memoryTypeBits, propertyFlags);
 
-        Check(vkAllocateMemory(device.GetVkHandle(), &allocInfo, nullptr, &m_VkDeviceMemory),
-              "allocate memory");
+        Check(vkAllocateMemory(device.GetVkHandle(), &allocInfo, nullptr, &m_VkDeviceMemory));
     }
 
     DeviceMemory::DeviceMemory(DeviceMemory &&other) noexcept
@@ -45,7 +44,7 @@ namespace VKT::Vulkan {
     void *DeviceMemory::Map(const size_t offset, const size_t size)
     {
         void *data;
-        Check(vkMapMemory(m_Device.GetVkHandle(), m_VkDeviceMemory, offset, size, 0, &data), "map memory");
+        Check(vkMapMemory(m_Device.GetVkHandle(), m_VkDeviceMemory, offset, size, 0, &data));
         return data;
     }
 

@@ -24,7 +24,7 @@ namespace VKT {
         bool Invalidate(size_t size, size_t offset);
 
         const Vulkan::Buffer &GetBuffer() const { return *m_Buffer; }
-        const VkDescriptorBufferInfo &GetDescriptor() const { return m_Descriptor; }
+        VkDescriptorBufferInfo &GetDescriptor() { return m_Descriptor; }
 
     private:
         Scope<Vulkan::Buffer> m_Buffer;

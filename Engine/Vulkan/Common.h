@@ -13,6 +13,6 @@ private: \
 
 namespace VKT::Vulkan
 {
-    void Check(VkResult result, const char* operation);
+    void Check(VkResult result);
     const char* ToString(VkResult result);
 }

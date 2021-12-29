@@ -9,6 +9,11 @@
 
 #include "Math/Glm.h"
 
+#include "Vulkan/Initializers.h"
+#include "Vulkan/ImageView.h"
+#include "Vulkan/Sampler.h"
+#include "Vulkan/ShaderModule.h"
+
 // Temporary
 #include <array>
 
@@ -71,15 +76,89 @@ namespace VKT {
 
         m_VertShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
         m_FragShader = CreateRef<Shader>(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
+        
+        // Create Pipeline Layout
+        std::vector<VkDescriptorPoolSize> poolSizes = {
+            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_SwapChain->GetVkImages().size()),
+            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SwapChain->GetVkImages().size()),
+        };
 
-        std::vector<DescriptorBinding> descriptorBindings =
-            {
-                {0, 1, m_UniformBuffer.get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
-                {1, 1, m_CheckerBoardTex.get(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
+        const uint32_t maxSetCount = (1 + 1) * m_SwapChain->GetVkImages().size();
+        VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
+        vkCreateDescriptorPool(m_Device->GetVkHandle(), &descriptorPoolInfo, nullptr, &m_VkDescriptorPool);
+
+        // Descriptor set layout
+        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+        };
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
+
+        vkCreateDescriptorSetLayout(m_Device->GetVkHandle(), &descriptorSetLayoutCI, nullptr, &m_VkDescriptorSetLayout);
+
+        // Pipeline layout
+        std::array<VkDescriptorSetLayout, 1> setLayouts = { m_VkDescriptorSetLayout };
+        VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
+        vkCreatePipelineLayout(m_Device->GetVkHandle(), &pipelineLayoutCI, nullptr, &m_VkPipelineLayout);
+
+        // Descriptor set
+        VkDescriptorSetAllocateInfo allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_VkDescriptorPool, &m_VkDescriptorSetLayout, 1);
+        vkAllocateDescriptorSets(m_Device->GetVkHandle(), &allocInfo, &m_VkDescriptorSet);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_CheckerBoardTex->GetImageView().GetVkHandle();
+        imageInfo.sampler = m_CheckerBoardTex->GetSampler().GetVkHandle();
+
+        std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+            Vulkan::Initializers::writeDescriptorSet(m_VkDescriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &m_UniformBuffer->GetDescriptor()),
+            Vulkan::Initializers::writeDescriptorSet(m_VkDescriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &imageInfo)
             };
-        m_DescriptorSetManager = CreateRef<DescriptorSetManager>(descriptorBindings);
 
-        m_GraphicsPipeline = CreateRef<GraphicsPipeline>(m_VertShader, m_FragShader, m_DescriptorSetManager);
+        vkUpdateDescriptorSets(m_Device->GetVkHandle(), writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+        
+        // Create Graphics Pipeline
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+        VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Vulkan::Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE, 0);
+        VkPipelineColorBlendAttachmentState blendAttachmentStateCI = Vulkan::Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+        VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Vulkan::Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentStateCI);
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Vulkan::Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+        VkPipelineViewportStateCreateInfo viewportStateCI = Vulkan::Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+        VkPipelineMultisampleStateCreateInfo multisampleStateCI = Vulkan::Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+        const std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipelineDynamicStateCreateInfo dynamicStateCI = Vulkan::Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
+
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{
+            m_VertShader->GetShaderModule().CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
+            m_FragShader->GetShaderModule().CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
+        };
+        
+        const std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
+            Vulkan::Initializers::vertexInputBindingDescription(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX),
+        };
+        const std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
+            Vulkan::Initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Position)),
+            Vulkan::Initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Normal)),
+            Vulkan::Initializers::vertexInputAttributeDescription(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Tangent)),
+            Vulkan::Initializers::vertexInputAttributeDescription(0, 3, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, a_Bitangent)),
+            Vulkan::Initializers::vertexInputAttributeDescription(0, 4, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, a_TexCoord)),
+        };
+        
+        VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
+
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_VkPipelineLayout, m_RenderPass->GetVkHandle(), 0);
+        pipelineCI.pVertexInputState = &vertexInputStateCI;
+        pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+        pipelineCI.pRasterizationState = &rasterizationStateCI;
+        pipelineCI.pColorBlendState = &colorBlendStateCI;
+        pipelineCI.pMultisampleState = &multisampleStateCI;
+        pipelineCI.pViewportState = &viewportStateCI;
+        pipelineCI.pDepthStencilState = &depthStencilStateCI;
+        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+        pipelineCI.pStages = shaderStages.data();
+        pipelineCI.pDynamicState = &dynamicStateCI;
+
+        vkCreateGraphicsPipelines(m_Device->GetVkHandle(), nullptr, 1, &pipelineCI, nullptr, &m_VkGraphicsPipeline);
 
         return 0;
     }
@@ -125,6 +204,12 @@ namespace VKT {
 
         vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        const VkViewport viewport = Vulkan::Initializers::viewport((float)m_SwapChain->GetVkExtent2D().width, (float)m_SwapChain->GetVkExtent2D().height, 0.0f, 1.0f);
+        const VkRect2D scissor = Vulkan::Initializers::rect2D(m_SwapChain->GetVkExtent2D().width, m_SwapChain->GetVkExtent2D().height, 0, 0);
+
+        vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -133,10 +218,13 @@ namespace VKT {
         UniformBufferObject ubo{};
         ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.View = glm::mat4(1.0f);
+        ubo.Proj = glm::mat4(1.0f);
+
+        m_UniformBuffer->Update(&ubo);
 
         // Draw Call
         {
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetPipeline().GetVkHandle());
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_VkGraphicsPipeline);
 
             VkBuffer vertexBuffers[] = { m_VertexBuffer->GetBuffer().GetVkHandle() };
             VkDeviceSize offsets[] = {0};
@@ -144,17 +232,12 @@ namespace VKT {
 
             vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
 
-            VkDescriptorSet descriptorSets[] = { m_DescriptorSetManager->GetDescriptorSet().GetVkHandle() };
             vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_GraphicsPipeline->GetPipelineLayout().GetVkHandle(), 0, 1,
-                                    descriptorSets, 0, nullptr);
+                                    m_VkPipelineLayout, 0, 1,
+                                    &m_VkDescriptorSet, 0, nullptr);
 
             vkCmdDrawIndexed(vkCommandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
         }
-
-        ubo.Proj = glm::mat4(1.0f);
-
-        m_UniformBuffer->Update(&ubo);
 
         vkCmdEndRenderPass(vkCommandBuffer);
 

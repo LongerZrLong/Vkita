@@ -17,8 +17,7 @@ namespace VKT::Vulkan {
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-        Check(vkCreatePipelineLayout(m_Device.GetVkHandle(), &pipelineLayoutInfo, nullptr, &m_VkPipelineLayout),
-              "create pipeline layout");
+        Check(vkCreatePipelineLayout(m_Device.GetVkHandle(), &pipelineLayoutInfo, nullptr, &m_VkPipelineLayout));
     }
 
     PipelineLayout::~PipelineLayout()

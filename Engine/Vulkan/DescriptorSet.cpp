@@ -20,8 +20,7 @@ namespace VKT::Vulkan {
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = layouts.data();
 
-        Check(vkAllocateDescriptorSets(descriptorPool.GetDevice().GetVkHandle(), &allocInfo, &m_VkDescriptorSet),
-              "allocate descriptor sets");
+        Check(vkAllocateDescriptorSets(descriptorPool.GetDevice().GetVkHandle(), &allocInfo, &m_VkDescriptorSet));
     }
 
     DescriptorSet::~DescriptorSet()

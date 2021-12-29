@@ -11,8 +11,7 @@ namespace VKT::Vulkan {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
-        Check(vkCreateFence(device.GetVkHandle(), &fenceInfo, nullptr, &m_VkFence),
-              "create fence");
+        Check(vkCreateFence(device.GetVkHandle(), &fenceInfo, nullptr, &m_VkFence));
     }
 
     Fence::Fence(Fence &&other) noexcept
@@ -32,14 +31,12 @@ namespace VKT::Vulkan {
 
     void Fence::Reset()
     {
-        Check(vkResetFences(m_Device.GetVkHandle(), 1, &m_VkFence),
-              "reset fence");
+        Check(vkResetFences(m_Device.GetVkHandle(), 1, &m_VkFence));
     }
 
     void Fence::Wait(const uint64_t timeout) const
     {
-        Check(vkWaitForFences(m_Device.GetVkHandle(), 1, &m_VkFence, VK_TRUE, timeout),
-              "wait for fence");
+        Check(vkWaitForFences(m_Device.GetVkHandle(), 1, &m_VkFence, VK_TRUE, timeout));
     }
 
 }

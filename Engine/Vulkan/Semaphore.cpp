@@ -10,8 +10,7 @@ namespace VKT::Vulkan {
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        Check(vkCreateSemaphore(device.GetVkHandle(), &semaphoreInfo, nullptr, &m_VkSemaphore),
-              "create semaphores");
+        Check(vkCreateSemaphore(device.GetVkHandle(), &semaphoreInfo, nullptr, &m_VkSemaphore));
     }
 
     Semaphore::Semaphore(Semaphore&& other) noexcept

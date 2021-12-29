@@ -72,8 +72,7 @@ namespace VKT::Vulkan {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        Check(vkCreateRenderPass(m_SwapChain.GetDevice().GetVkHandle(), &renderPassInfo, nullptr, &m_VkRenderPass),
-              "create render pass");
+        Check(vkCreateRenderPass(m_SwapChain.GetDevice().GetVkHandle(), &renderPassInfo, nullptr, &m_VkRenderPass));
     }
 
     RenderPass::~RenderPass()
