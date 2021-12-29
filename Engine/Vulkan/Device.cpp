@@ -51,6 +51,8 @@ namespace VKT::Vulkan {
 
         // Find the graphics queue.
         const auto graphicsFamily = FindQueue(queueFamilies, "graphics", VK_QUEUE_GRAPHICS_BIT, 0);
+        const auto computeFamily = FindQueue(queueFamilies, "compute", VK_QUEUE_COMPUTE_BIT, 0);
+        const auto transferFamily = FindQueue(queueFamilies, "transfer", VK_QUEUE_TRANSFER_BIT, 0);
 
         // Find the presentation queue (usually the same as graphics queue).
         const auto presentFamily = std::find_if(queueFamilies.begin(), queueFamilies.end(), [&](const VkQueueFamilyProperties& queueFamily)
@@ -68,12 +70,16 @@ namespace VKT::Vulkan {
 
         m_GraphicsFamilyIndex = static_cast<uint32_t>(graphicsFamily - queueFamilies.begin());
         m_PresentFamilyIndex = static_cast<uint32_t>(presentFamily - queueFamilies.begin());
+        m_ComputeFamilyIndex = static_cast<uint32_t>(computeFamily - queueFamilies.begin());
+        m_TransferFamilyIndex = static_cast<uint32_t>(transferFamily - queueFamilies.begin());
 
         // Queues can be the same
         const std::set<uint32_t> uniqueQueueFamilies =
             {
                 m_GraphicsFamilyIndex,
                 m_PresentFamilyIndex,
+                m_ComputeFamilyIndex,
+                m_TransferFamilyIndex
             };
 
         // Create queues
@@ -109,6 +115,8 @@ namespace VKT::Vulkan {
 
         vkGetDeviceQueue(m_VkDevice, m_GraphicsFamilyIndex, 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_VkDevice, m_PresentFamilyIndex, 0, &m_PresentQueue);
+        vkGetDeviceQueue(m_VkDevice, m_ComputeFamilyIndex, 0, &m_ComputeQueue);
+        vkGetDeviceQueue(m_VkDevice, m_TransferFamilyIndex, 0, &m_TransferQueue);
     }
 
     Device::~Device()

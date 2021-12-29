@@ -30,9 +30,13 @@ namespace VKT::Vulkan {
 
         uint32_t GetGraphicsFamilyIndex() const { return m_GraphicsFamilyIndex; }
         uint32_t GetPresentFamilyIndex() const { return m_PresentFamilyIndex; }
+        uint32_t GetComputeFamilyIndex() const { return m_ComputeFamilyIndex; }
+        uint32_t GetTransferFamilyIndex() const { return m_TransferFamilyIndex; }
 
         VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
         VkQueue GetPresentQueue() const { return m_PresentQueue; }
+        VkQueue GetComputeQueue() const { return m_ComputeQueue; }
+        VkQueue GetTransferQueue() const { return m_TransferQueue; }
 
         void WaitIdle() const;
 
@@ -49,9 +53,13 @@ namespace VKT::Vulkan {
 
         uint32_t m_GraphicsFamilyIndex{};
         uint32_t m_PresentFamilyIndex{};
+        uint32_t m_ComputeFamilyIndex{};
+        uint32_t m_TransferFamilyIndex{};
 
         VkQueue m_GraphicsQueue{};
         VkQueue m_PresentQueue{};
+        VkQueue m_ComputeQueue{};
+        VkQueue m_TransferQueue{};
 
     };
 
