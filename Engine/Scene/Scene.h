@@ -9,9 +9,9 @@
 #include "SceneNode.h"
 
 #include "Core/Base.h"
+#include "Core/Image.h"
 
-#include "Renderer/Texture2D.h"
-#include "Renderer/Vertex.h"
+#include "Rendering/Vertex.h"
 
 namespace VKT {
 
@@ -22,7 +22,7 @@ namespace VKT {
         std::vector<Material>                               m_Materials;
         std::vector<SceneNode>                              m_SceneNodes;
 
-        std::vector<Vertex>     m_Vertices;
+        std::vector<Rendering::Vertex>     m_Vertices;
         std::vector<uint32_t>   m_Indices;
 
     };

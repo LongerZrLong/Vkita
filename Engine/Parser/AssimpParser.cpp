@@ -3,7 +3,7 @@
 #include "Core/Image.h"
 #include "Core/FileSystem.h"
 
-#include "Renderer/Texture2D.h"
+#include "Rendering/Texture2D.h"
 
 namespace VKT {
 
@@ -169,7 +169,7 @@ namespace VKT {
 
                 scene->m_Vertices.emplace_back
                     (
-                        Vertex
+                        Rendering::Vertex
                             (
                                 {
                                     {position.x,  position.y,  position.z},

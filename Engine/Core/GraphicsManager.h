@@ -29,10 +29,10 @@
 #include "Vulkan/PipelineLayout.h"
 #include "Vulkan/ShaderModule.h"
 
-#include "Renderer/VulkanBuffer.h"
-#include "Renderer/VertexBuffer.h"
-#include "Renderer/IndexBuffer.h"
-#include "Renderer/Texture2D.h"
+#include "Rendering/Buffer.h"
+#include "Rendering/VertexBuffer.h"
+#include "Rendering/IndexBuffer.h"
+#include "Rendering/Texture2D.h"
 
 #include "Scene/SceneNode.h"
 
@@ -117,12 +117,12 @@ namespace VKT {
         Ref<Vulkan::ShaderModule> m_VertShader;
         Ref<Vulkan::ShaderModule> m_FragShader;
 
-        Ref<VertexBuffer> m_VertexBuffer;
-        Ref<IndexBuffer> m_IndexBuffer;
+        Ref<Rendering::VertexBuffer> m_VertexBuffer;
+        Ref<Rendering::IndexBuffer> m_IndexBuffer;
 
         struct ShaderData
         {
-            Scope<VulkanBuffer> buffer;
+            Scope<Rendering::Buffer> buffer;
             struct Values
             {
                 alignas(16) glm::mat4 View;
@@ -139,7 +139,7 @@ namespace VKT {
 
         struct MaterialUBO
         {
-            Scope<VulkanBuffer> buffer;
+            Scope<Rendering::Buffer> buffer;
             struct Values
             {
                 alignas(4) bool HasDiffMap;
@@ -149,7 +149,7 @@ namespace VKT {
             } values;
         };
         std::vector<MaterialUBO> m_MaterialUniformBuffers;
-        std::unordered_map<std::string, Scope<Texture2D>> m_Textures;
+        std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
 
         bool m_Prepared = false;
     };

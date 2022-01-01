@@ -1,5 +1,7 @@
 #include "Application.h"
 
+#include <GLFW/glfw3.h>
+
 #include "Core/Log.h"
 
 namespace VKT {

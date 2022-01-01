@@ -6,16 +6,16 @@
 
 #include "Vulkan/BufferUtil.h"
 
-namespace VKT {
+namespace VKT::Rendering {
 
     IndexBuffer::IndexBuffer(const std::vector<uint32_t> &indices)
         : m_Count(indices.size())
     {
         auto flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
-        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
+        const VKT::Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const VKT::Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
         size_t size = sizeof(indices[0]) * m_Count;
-        Vulkan::BufferUtil::CreateDeviceBuffer(device, commandPool, "indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
+        VKT::Vulkan::BufferUtil::CreateDeviceBuffer(device, commandPool, "indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
     }
 
     IndexBuffer::IndexBuffer(IndexBuffer &&other) noexcept

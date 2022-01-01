@@ -1,7 +1,5 @@
 #include "CommandPool.h"
 
-#include "Device.h"
-
 namespace VKT::Vulkan {
 
     CommandPool::CommandPool(const Device &device, const uint32_t queueFamilyIndex, const bool allowReset)

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
 #include "Event.h"
 
 #include "Core/Timestep.h"
+
+class GLFWwindow;
 
 namespace VKT {
 

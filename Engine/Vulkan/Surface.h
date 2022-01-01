@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Common.h"
+#include "Instance.h"
 
 namespace VKT::Vulkan {
-
-    class Instance;
 
     class Surface
     {

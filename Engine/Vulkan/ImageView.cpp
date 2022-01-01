@@ -1,7 +1,5 @@
 #include "ImageView.h"
 
-#include "Device.h"
-
 namespace VKT::Vulkan {
 
     ImageView::ImageView(const Device &device, const VkImage image, const VkFormat format, const VkImageAspectFlags aspectFlags)

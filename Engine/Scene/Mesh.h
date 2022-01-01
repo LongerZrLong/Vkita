@@ -2,8 +2,6 @@
 
 #include "Material.h"
 
-#include "Renderer/VulkanBuffer.h"
-
 namespace VKT {
 
     struct Primitive

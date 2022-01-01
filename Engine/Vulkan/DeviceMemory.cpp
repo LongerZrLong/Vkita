@@ -1,7 +1,5 @@
 #include "DeviceMemory.h"
 
-#include "Device.h"
-
 namespace VKT::Vulkan {
 
     DeviceMemory::DeviceMemory(

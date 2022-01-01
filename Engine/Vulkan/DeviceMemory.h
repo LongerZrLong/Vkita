@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Common.h"
+#include "Device.h"
 
 namespace VKT::Vulkan {
-
-    class Device;
 
     class DeviceMemory
     {

@@ -1,13 +1,11 @@
 #include "ShaderModule.h"
 
-#include "Device.h"
-
-#include "Utils/FileIO.h"
+#include "Core/FileSystem.h"
 
 namespace VKT::Vulkan {
 
     ShaderModule::ShaderModule(const Device &device, const std::string &path)
-        : ShaderModule(device, ReadFile(path))
+        : ShaderModule(device, g_FileSystem->ReadFile(path))
     {
     }
 

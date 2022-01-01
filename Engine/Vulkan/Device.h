@@ -4,10 +4,9 @@
 
 #include "Common.h"
 #include "DebugUtils.h"
+#include "Surface.h"
 
 namespace VKT::Vulkan {
-
-    class Surface;
 
     class Device
     {

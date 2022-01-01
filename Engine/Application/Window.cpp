@@ -1,5 +1,7 @@
 #include "Window.h"
 
+#include <GLFW/glfw3.h>
+
 #include "ApplicationEvent.h"
 #include "KeyEvent.h"
 #include "MouseEvent.h"

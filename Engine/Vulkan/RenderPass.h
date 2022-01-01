@@ -2,6 +2,8 @@
 
 #include "Common.h"
 #include "Device.h"
+#include "SwapChain.h"
+#include "DepthBuffer.h"
 
 namespace VKT::Vulkan {
 

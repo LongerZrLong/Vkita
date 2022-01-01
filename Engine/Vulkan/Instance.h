@@ -4,9 +4,7 @@
 
 #include "Common.h"
 
-namespace VKT {
-    class Window;
-}
+#include "Application/Window.h"
 
 namespace VKT::Vulkan {
 

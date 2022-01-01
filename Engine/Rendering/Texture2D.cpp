@@ -6,12 +6,8 @@
 
 #include "Vulkan/Buffer.h"
 #include "Vulkan/CommandPool.h"
-#include "Vulkan/ImageView.h"
-#include "Vulkan/Image.h"
-#include "Vulkan/DeviceMemory.h"
-#include "Vulkan/Sampler.h"
 
-namespace VKT {
+namespace VKT::Rendering {
 
     Texture2D::Texture2D(const Image &img)
         : m_Width(img.m_Width), m_Height(img.m_Height), m_Descriptor()
@@ -28,12 +24,12 @@ namespace VKT {
 
     void Texture2D::SetData(void *data, uint32_t size)
     {
-        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
-        const Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
+        const VKT::Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const VKT::Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
 
         // Create a host staging buffer and copy the image into it.
         VkDeviceSize imageSize = size;
-        auto stagingBuffer = CreateScope<Vulkan::Buffer>(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        auto stagingBuffer = CreateScope<VKT::Vulkan::Buffer>(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         auto stagingBufferMemory = stagingBuffer->AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         void *ptr = stagingBufferMemory.Map(0, imageSize);
@@ -51,12 +47,12 @@ namespace VKT {
 
     void Texture2D::PrepareTexture2D()
     {
-        const Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const VKT::Vulkan::Device &device = g_GraphicsManager->GetDevice();
 
         // Create the device side image, memory, view and sampler.
-        m_Image = CreateScope<Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);
-        m_DeviceMemory = CreateScope<Vulkan::DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        m_ImageView = CreateScope<Vulkan::ImageView>(device, m_Image->GetVkHandle(), m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
+        m_Image = CreateScope<VKT::Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);
+        m_DeviceMemory = CreateScope<VKT::Vulkan::DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        m_ImageView = CreateScope<VKT::Vulkan::ImageView>(device, m_Image->GetVkHandle(), m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
 
         VkSamplerCreateInfo samplerInfo = {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -76,7 +72,7 @@ namespace VKT {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 0.0f;
 
-        m_Sampler = CreateScope<Vulkan::Sampler>(device, &samplerInfo);
+        m_Sampler = CreateScope<VKT::Vulkan::Sampler>(device, &samplerInfo);
 
         m_Descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         m_Descriptor.imageView = m_ImageView->GetVkHandle();

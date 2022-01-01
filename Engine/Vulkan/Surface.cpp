@@ -1,7 +1,5 @@
 #include "Surface.h"
 
-#include "Instance.h"
-
 #include "Application/Window.h"
 
 namespace VKT::Vulkan {

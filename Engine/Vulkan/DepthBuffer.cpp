@@ -1,12 +1,8 @@
 #include "DepthBuffer.h"
 
-#include "Core/Base.h"
-
-#include "CommandPool.h"
-#include "Device.h"
-#include "DeviceMemory.h"
 #include "Image.h"
-#include "ImageView.h"
+
+#include "Core/Base.h"
 
 namespace VKT::Vulkan {
 

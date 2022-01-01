@@ -22,13 +22,6 @@
 // Math
 #include "Math/Glm.h"
 
-// Renderer
-#include "Renderer/Vertex.h"
-#include "Renderer/VulkanBuffer.h"
-#include "Renderer/VertexBuffer.h"
-#include "Renderer/IndexBuffer.h"
-#include "Renderer/Texture2D.h"
-
 // Scene
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"

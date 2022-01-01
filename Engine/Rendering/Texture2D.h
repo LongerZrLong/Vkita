@@ -7,7 +7,12 @@
 #include "Core/Base.h"
 #include "Core/Image.h"
 
-namespace VKT {
+#include "Vulkan/Image.h"
+#include "Vulkan/ImageView.h"
+#include "Vulkan/DeviceMemory.h"
+#include "Vulkan/Sampler.h"
+
+namespace VKT::Rendering {
 
     namespace Vulkan {
         class CommandPool;
@@ -34,10 +39,10 @@ namespace VKT {
         void PrepareTexture2D();
 
     private:
-        Scope<Vulkan::Image> m_Image;
-        Scope<Vulkan::DeviceMemory> m_DeviceMemory;
-        Scope<Vulkan::ImageView> m_ImageView;
-        Scope<Vulkan::Sampler> m_Sampler;
+        Scope<VKT::Vulkan::Image> m_Image;
+        Scope<VKT::Vulkan::DeviceMemory> m_DeviceMemory;
+        Scope<VKT::Vulkan::ImageView> m_ImageView;
+        Scope<VKT::Vulkan::Sampler> m_Sampler;
 
         VkDescriptorImageInfo m_Descriptor;
 

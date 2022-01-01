@@ -3,14 +3,14 @@
 #include <memory>
 
 #include "Common.h"
+#include "CommandPool.h"
+#include "Device.h"
+#include "DeviceMemory.h"
+#include "ImageView.h"
 
 namespace VKT::Vulkan {
 
-    class CommandPool;
-    class Device;
-    class DeviceMemory;
     class Image;
-    class ImageView;
 
     class DepthBuffer
     {

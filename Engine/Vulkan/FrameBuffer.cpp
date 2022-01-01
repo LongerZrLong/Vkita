@@ -4,7 +4,6 @@
 
 #include "ImageView.h"
 #include "DepthBuffer.h"
-#include "SwapChain.h"
 
 namespace VKT::Vulkan {
 

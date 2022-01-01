@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Common.h"
+#include "Buffer.h"
+#include "DepthBuffer.h"
+#include "Device.h"
+#include "DeviceMemory.h"
 
 namespace VKT::Vulkan {
-
-	class Device;
-	class Buffer;
-	class CommandPool;
-	class DeviceMemory;
 
 	class Image
 	{

@@ -5,7 +5,7 @@ file(GLOB_RECURSE SRCS
         Input/*.cpp
         Memory/*.cpp
         Parser/*.cpp
-        Renderer/*.cpp
+        Rendering/*.cpp
         Scene/*.cpp
         Utils/*.cpp
         Vulkan/*.cpp

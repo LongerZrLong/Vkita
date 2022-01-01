@@ -4,10 +4,9 @@
 #include <vector>
 
 #include "Common.h"
+#include "Device.h"
 
 namespace VKT::Vulkan {
-
-    class Device;
 
     class ShaderModule
     {

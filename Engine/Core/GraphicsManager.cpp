@@ -332,22 +332,22 @@ namespace VKT {
     {
         auto &scene = g_SceneManager->GetScene();
 
-        m_VertexBuffer = CreateRef<VertexBuffer>(scene.m_Vertices);
-        m_IndexBuffer = CreateRef<IndexBuffer>(scene.m_Indices);
+        m_VertexBuffer = CreateRef<Rendering::VertexBuffer>(scene.m_Vertices);
+        m_IndexBuffer = CreateRef<Rendering::IndexBuffer>(scene.m_Indices);
 
-        m_ShaderData.buffer = CreateScope<VulkanBuffer>(sizeof(m_ShaderData.values),
+        m_ShaderData.buffer = CreateScope<Rendering::Buffer>(sizeof(m_ShaderData.values),
                                                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         for (auto &it : scene.m_Textures)
         {
-            m_Textures[it.first] = CreateScope<Texture2D>(*it.second);
+            m_Textures[it.first] = CreateScope<Rendering::Texture2D>(*it.second);
         }
 
         m_MaterialUniformBuffers.resize(scene.m_Materials.size());
         for (size_t i = 0; i < scene.m_Materials.size(); i++)
         {
-            m_MaterialUniformBuffers[i].buffer = CreateScope<VulkanBuffer>(sizeof(MaterialUBO),
+            m_MaterialUniformBuffers[i].buffer = CreateScope<Rendering::Buffer>(sizeof(MaterialUBO),
                                                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -467,8 +467,8 @@ namespace VKT {
             m_FragShader->CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
         };
 
-        auto vertexInputBindings = Vertex::GetBindingDescription();
-        auto vertexInputAttributes = Vertex::GetAttributeDescriptions();
+        auto vertexInputBindings = Rendering::Vertex::GetBindingDescription();
+        auto vertexInputAttributes = Rendering::Vertex::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
 

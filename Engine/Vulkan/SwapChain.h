@@ -5,14 +5,12 @@
 #include <memory>
 #include <vector>
 
-namespace VKT {
-    class Window;
-}
+#include "Device.h"
+#include "ImageView.h"
+
+#include "Application/Window.h"
 
 namespace VKT::Vulkan {
-
-    class Device;
-    class ImageView;
 
     class SwapChain
     {

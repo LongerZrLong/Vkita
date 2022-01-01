@@ -1,7 +1,5 @@
 #include "Sampler.h"
 
-#include "Device.h"
-
 namespace VKT::Vulkan {
 
     Sampler::Sampler(const Device &device, VkSamplerCreateInfo *samplerInfo)

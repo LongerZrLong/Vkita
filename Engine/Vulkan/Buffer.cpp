@@ -1,7 +1,5 @@
 #include "Buffer.h"
 
-#include "Device.h"
-#include "DeviceMemory.h"
 #include "SingleTimeCommands.h"
 
 namespace VKT::Vulkan {

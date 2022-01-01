@@ -5,8 +5,6 @@
 #include <set>
 
 #include "Enumerate.h"
-#include "Instance.h"
-#include "Surface.h"
 
 namespace VKT::Vulkan {
 
