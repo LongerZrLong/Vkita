@@ -10,7 +10,7 @@ namespace VKT {
     class Transform
     {
     public:
-        Transform(SceneNode &node);
+        Transform(SceneNode *node = nullptr);
 
         void SetPosition(const glm::vec3 &position);
         void SetRotation(const glm::quat &rotation);
@@ -18,6 +18,7 @@ namespace VKT {
         void SetRotation(const glm::vec3 &axis, float angle);
         void SetScale(const glm::vec3 &scale);
         void SetMatrix4x4(const glm::mat4 &T);
+        void SetNode(SceneNode *node);
 
         glm::vec3 GetPosition() const { return position_; }
         glm::quat GetRotation() const { return rotation_; }
@@ -46,7 +47,7 @@ namespace VKT {
 
         glm::mat4 local_transform_mat_;
 
-        SceneNode &node_;
+        SceneNode *node_;
     };
 
 }

@@ -18,11 +18,12 @@ namespace VKT {
     class Scene
     {
     public:
-        std::unordered_map<std::string, Scope<Image>>   m_Textures;
+        std::unordered_map<std::string, Scope<Image>>       m_Textures;
         std::vector<Material>                               m_Materials;
-        std::vector<Scope<SceneNode>>                       m_SceneNodes;
+        std::vector<SceneNode>                              m_SceneNodes;
 
         std::vector<Vertex>     m_Vertices;
         std::vector<uint32_t>   m_Indices;
+
     };
 }

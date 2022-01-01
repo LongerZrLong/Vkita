@@ -11,6 +11,7 @@ namespace VKT::Vulkan {
         NON_COPIABLE(Pipeline);
 
         Pipeline(const Device &device, VkGraphicsPipelineCreateInfo *pipelineCreateInfo);
+        Pipeline(const Device &device, VkComputePipelineCreateInfo *pipelineCreateInfo);
         ~Pipeline();
 
     private:

@@ -40,8 +40,6 @@ using namespace VKT;
 
 int main(int, char**)
 {
-    Log::Init();
-
     g_App->Initialize();
     g_FileSystem->Initialize();
     g_InputManager->Initialize();

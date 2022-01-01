@@ -1,4 +1,4 @@
-set(TEST_CASES FileSystemTest SceneLoadTest
+set(TEST_CASES FileSystemTest SceneLoadTest SceneRenderTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)

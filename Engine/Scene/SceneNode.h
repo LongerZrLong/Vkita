@@ -12,11 +12,9 @@ namespace VKT {
     class SceneNode
     {
     public:
-        SceneNode() : m_Transform(*this) {};
-
         std::string m_Name;
         SceneNode *m_Parent;
-        std::vector<Scope<SceneNode>> m_Children;
+        std::vector<SceneNode> m_Children;
 
         Mesh m_Mesh;
 

@@ -6,6 +6,7 @@
 #include "Log.h"
 #include "Image.h"
 #include "FileSystem.h"
+#include "SceneManager.h"
 
 #include "Application/Application.h"
 
@@ -16,13 +17,6 @@
 #include "Vulkan/Sampler.h"
 
 namespace VKT {
-
-    struct UniformBufferObject
-    {
-        alignas(16) glm::mat4 Model;
-        alignas(16) glm::mat4 View;
-        alignas(16) glm::mat4 Proj;
-    };
 
     int GraphicsManager::Initialize()
     {
@@ -44,117 +38,12 @@ namespace VKT {
 
         LogVulkanInfo();
 
-        // TODO: Delete Testing Code
-        const std::vector<Vertex> vertices = {
-            {{-0.5f, -0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0.0, 0.0}},
-            {{0.5f, -0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1.0, 0.0}},
-            {{0.5f, 0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1.0, 1.0}},
-            {{-0.5f, 0.5f, 0.0f}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0.0, 1.0}},
-        };
-
-        const std::vector<uint32_t> indices = {
-            0, 1, 2, 2, 3, 0
-        };
-
-        m_VertexBuffer = CreateRef<VertexBuffer>(vertices);
-        m_IndexBuffer = CreateRef<IndexBuffer>(indices);
-
-        m_UniformBuffer = CreateRef<VulkanBuffer>(sizeof(UniformBufferObject),
-                                                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-        UniformBufferObject ubo = {};
-        ubo.Model = glm::mat4(1.0f);
-        ubo.View = glm::mat4(1.0f);
-        ubo.Proj = glm::mat4(1.0f);
-        m_UniformBuffer->Update(&ubo);
-
-        Image img = Image(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Textures/Checkerboard.png"));
-        m_CheckerBoardTex = CreateRef<Texture2D>(img);
-
-        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
-        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
-        
-        // Create Pipeline Layout
-        std::vector<VkDescriptorPoolSize> poolSizes = {
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_SwapChain->GetVkImages().size()),
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SwapChain->GetVkImages().size()),
-        };
-
-        const uint32_t maxSetCount = (1 + 1) * m_SwapChain->GetVkImages().size();
-        VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
-        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Device, &descriptorPoolInfo);
-
-        // Descriptor set layout
-        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-        };
-        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-        m_DescriptorSetLayout = CreateRef<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
-
-        // Pipeline layout
-        std::array<VkDescriptorSetLayout, 1> setLayouts = { m_DescriptorSetLayout->GetVkHandle() };
-        VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
-        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Device, &pipelineLayoutCI);
-
-        // Descriptor set
-        VkDescriptorSetAllocateInfo allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_DescriptorSetLayout->GetVkHandle(), 1);
-        m_DescriptorSet = CreateRef<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = m_CheckerBoardTex->GetImageView().GetVkHandle();
-        imageInfo.sampler = m_CheckerBoardTex->GetSampler().GetVkHandle();
-
-        std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
-            Vulkan::Initializers::writeDescriptorSet(m_DescriptorSet->GetVkHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &m_UniformBuffer->GetDescriptor()),
-            Vulkan::Initializers::writeDescriptorSet(m_DescriptorSet->GetVkHandle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &imageInfo)
-            };
-
-        vkUpdateDescriptorSets(m_Device->GetVkHandle(), writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-        
-        // Create Graphics Pipeline
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-        VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Vulkan::Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE, 0);
-        VkPipelineColorBlendAttachmentState blendAttachmentStateCI = Vulkan::Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
-        VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Vulkan::Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentStateCI);
-        VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Vulkan::Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
-        VkPipelineViewportStateCreateInfo viewportStateCI = Vulkan::Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
-        VkPipelineMultisampleStateCreateInfo multisampleStateCI = Vulkan::Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
-        const std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-        VkPipelineDynamicStateCreateInfo dynamicStateCI = Vulkan::Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
-
-        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{
-            m_VertShader->CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
-            m_FragShader->CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
-        };
-
-        auto vertexInputBindings = Vertex::GetBindingDescription();
-        auto vertexInputAttributes = Vertex::GetAttributeDescriptions();
-        
-        VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
-
-        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_RenderPass->GetVkHandle(), 0);
-        pipelineCI.pVertexInputState = &vertexInputStateCI;
-        pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
-        pipelineCI.pRasterizationState = &rasterizationStateCI;
-        pipelineCI.pColorBlendState = &colorBlendStateCI;
-        pipelineCI.pMultisampleState = &multisampleStateCI;
-        pipelineCI.pViewportState = &viewportStateCI;
-        pipelineCI.pDepthStencilState = &depthStencilStateCI;
-        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
-        pipelineCI.pStages = shaderStages.data();
-        pipelineCI.pDynamicState = &dynamicStateCI;
-
-        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Device, &pipelineCI);
-
         return 0;
     }
 
     void GraphicsManager::ShutDown()
     {
-        DeviceWaitIdle();
+        m_Device->WaitIdle();
 
         DeleteSwapChain();
         DeleteSyncObjects();
@@ -162,80 +51,21 @@ namespace VKT {
 
     void GraphicsManager::Tick()
     {
+        if (!m_Prepared)
+        {
+            InitializeGeometries();
+            PreparePipeline();
+            BuildCommandBuffers();
+
+            m_Prepared = true;
+        }
+
         if (!BeginFrame())
             return;
-
-        Draw();
 
         EndFrame();
 
         Present();
-    }
-
-    void GraphicsManager::Draw()
-    {
-        // TODO: Delete Testing Code
-        VkCommandBuffer vkCommandBuffer = m_CommandBuffers->Begin(m_CurrentImageIndex);
-
-        VkRenderPassBeginInfo renderPassBeginInfo = Vulkan::Initializers::renderPassBeginInfo();
-        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassBeginInfo.renderPass = m_RenderPass->GetVkHandle();
-        renderPassBeginInfo.framebuffer = m_FrameBuffers[m_CurrentImageIndex]->GetVkHandle();
-        renderPassBeginInfo.renderArea.offset = {0, 0};
-        renderPassBeginInfo.renderArea.extent = m_SwapChain->GetVkExtent2D();
-
-        std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassBeginInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        const VkViewport viewport = Vulkan::Initializers::viewport((float)m_SwapChain->GetVkExtent2D().width, (float)m_SwapChain->GetVkExtent2D().height, 0.0f, 1.0f);
-        const VkRect2D scissor = Vulkan::Initializers::rect2D(m_SwapChain->GetVkExtent2D().width, m_SwapChain->GetVkExtent2D().height, 0, 0);
-
-        vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
-
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-        UniformBufferObject ubo{};
-        ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.View = glm::mat4(1.0f);
-        ubo.Proj = glm::mat4(1.0f);
-
-        m_UniformBuffer->Update(&ubo);
-
-        // Draw Call
-        {
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
-
-            VkBuffer vertexBuffers[] = { m_VertexBuffer->GetBuffer().GetVkHandle() };
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-
-            vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_PipelineLayout->GetVkHandle(), 0, 1,
-                                    &m_DescriptorSet->GetVkHandle(), 0, nullptr);
-
-            vkCmdDrawIndexed(vkCommandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
-        }
-
-        vkCmdEndRenderPass(vkCommandBuffer);
-
-        m_CommandBuffers->End(m_CurrentImageIndex);
-    }
-
-    void GraphicsManager::DeviceWaitIdle()
-    {
-        m_Device->WaitIdle();
     }
 
     const std::vector<VkExtensionProperties> &GraphicsManager::GetExtensions() const
@@ -376,6 +206,8 @@ namespace VKT {
         m_Device->WaitIdle();
         DeleteSwapChain();
         CreateSwapChain();
+
+        m_Prepared = false;
     }
 
     bool GraphicsManager::BeginFrame()
@@ -493,6 +325,234 @@ namespace VKT {
                           driverProp.driverName,
                           driverProp.driverInfo,
                           driverVersion);
+        }
+    }
+
+    void GraphicsManager::InitializeGeometries()
+    {
+        auto &scene = g_SceneManager->GetScene();
+
+        m_VertexBuffer = CreateRef<VertexBuffer>(scene.m_Vertices);
+        m_IndexBuffer = CreateRef<IndexBuffer>(scene.m_Indices);
+
+        m_ShaderData.buffer = CreateScope<VulkanBuffer>(sizeof(m_ShaderData.values),
+                                                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+        for (auto &it : scene.m_Textures)
+        {
+            m_Textures[it.first] = CreateScope<Texture2D>(*it.second);
+        }
+
+        m_MaterialUniformBuffers.resize(scene.m_Materials.size());
+        for (size_t i = 0; i < scene.m_Materials.size(); i++)
+        {
+            m_MaterialUniformBuffers[i].buffer = CreateScope<VulkanBuffer>(sizeof(MaterialUBO),
+                                                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+            m_MaterialUniformBuffers[i].values.HasDiffMap = scene.m_Materials[i].m_DiffuseTextureName.empty();
+            m_MaterialUniformBuffers[i].values.HasSpecMap = scene.m_Materials[i].m_SpecularTextureName.empty();
+            m_MaterialUniformBuffers[i].values.DiffColor = scene.m_Materials[i].m_DiffuseColor;
+            m_MaterialUniformBuffers[i].values.SpecColor = scene.m_Materials[i].m_SpecularColor;
+
+            m_MaterialUniformBuffers[i].buffer->Update(&m_MaterialUniformBuffers[i].values);
+        }
+
+        // Temporary set projection, view matrix here
+        m_ShaderData.values.Proj = glm::perspective(glm::radians(45.0f), g_App->GetWindow().GetWidth() / (float) g_App->GetWindow().GetHeight(), 0.1f, 1000.0f);
+        m_ShaderData.values.Proj[1][1] *= -1;
+
+        m_ShaderData.values.View = glm::lookAt(glm::vec3(0.0f, 10.0f, 30.0f), glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        m_ShaderData.buffer->Update(&m_ShaderData.values);
+
+        // Set up descriptors
+        // One uniform buffer
+        // One uniform buffer for each material
+        // Two combined image samplers (diffuse + specular) for each material
+        std::vector<VkDescriptorPoolSize> poolSizes = {
+            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
+            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, scene.m_Materials.size()),
+            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * scene.m_Materials.size())
+        };
+
+        const uint32_t maxSetCount = 1 + scene.m_Materials.size();
+        VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
+        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Device, &descriptorPoolInfo);
+
+        // Descriptor set layout for shader data matrices (View + Proj matrices)
+        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
+        {
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+        };
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
+        m_MatricesDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
+
+        // Descriptor Set layout for each material
+        setLayoutBindings =
+        {
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
+            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2),
+        };
+        descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
+        m_MaterialDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
+
+        // Descriptor Set for shader data matrices
+        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MatricesDescSetLayout->GetVkHandle(), 1);
+        m_MatricesDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
+
+        // Descriptor Set for each material
+        allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MaterialDescSetLayout->GetVkHandle(), 1);
+        m_MaterialDescSets.resize(scene.m_Materials.size());
+        for (size_t i = 0; i < scene.m_Materials.size(); i++)
+        {
+            allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MaterialDescSetLayout->GetVkHandle(), 1);
+            m_MaterialDescSets[i] = CreateScope<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
+        }
+
+        // Write Descriptor Set for shader data matrices
+        VkDescriptorBufferInfo bufferInfo= m_ShaderData.buffer->GetDescriptor();
+        m_MatricesDescSet->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
+
+        // Write Descriptor Set for each material
+        for (size_t i = 0; i < m_MaterialDescSets.size(); i++)
+        {
+            VkDescriptorBufferInfo uboInfo = m_MaterialUniformBuffers[i].buffer->GetDescriptor();
+            m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uboInfo);
+
+            if (!scene.m_Materials[i].m_DiffuseTextureName.empty())
+            {
+                VkDescriptorImageInfo diffMap = m_Textures[scene.m_Materials[i].m_DiffuseTextureName]->GetDescriptor();
+                m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &diffMap);
+            }
+
+            if (!scene.m_Materials[i].m_SpecularTextureName.empty())
+            {
+                VkDescriptorImageInfo specMap = m_Textures[scene.m_Materials[i].m_SpecularTextureName]->GetDescriptor();
+                m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, &specMap);
+            }
+
+        }
+    }
+
+    void GraphicsManager::PreparePipeline()
+    {
+        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
+        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
+
+        // Pipeline layout
+        std::array<VkDescriptorSetLayout, 2> setLayouts = { m_MatricesDescSetLayout->GetVkHandle(), m_MaterialDescSetLayout->GetVkHandle() };
+        VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
+        VkPushConstantRange pushConstantRange = Vulkan::Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), 0);
+        pipelineLayoutCI.pushConstantRangeCount = 1;
+        pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
+        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Device, &pipelineLayoutCI);
+
+        // Create Graphics Pipeline
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+        VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Vulkan::Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+        VkPipelineColorBlendAttachmentState blendAttachmentStateCI = Vulkan::Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+        VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Vulkan::Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentStateCI);
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Vulkan::Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+        VkPipelineViewportStateCreateInfo viewportStateCI = Vulkan::Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+        VkPipelineMultisampleStateCreateInfo multisampleStateCI = Vulkan::Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+        const std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipelineDynamicStateCreateInfo dynamicStateCI = Vulkan::Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
+
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages
+        {
+            m_VertShader->CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
+            m_FragShader->CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
+        };
+
+        auto vertexInputBindings = Vertex::GetBindingDescription();
+        auto vertexInputAttributes = Vertex::GetAttributeDescriptions();
+
+        VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
+
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_RenderPass->GetVkHandle(), 0);
+        pipelineCI.pVertexInputState = &vertexInputStateCI;
+        pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+        pipelineCI.pRasterizationState = &rasterizationStateCI;
+        pipelineCI.pColorBlendState = &colorBlendStateCI;
+        pipelineCI.pMultisampleState = &multisampleStateCI;
+        pipelineCI.pViewportState = &viewportStateCI;
+        pipelineCI.pDepthStencilState = &depthStencilStateCI;
+        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+        pipelineCI.pStages = shaderStages.data();
+        pipelineCI.pDynamicState = &dynamicStateCI;
+
+        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Device, &pipelineCI);
+    }
+
+    void GraphicsManager::BuildCommandBuffers()
+    {
+        VkClearValue clearValues[2];
+        clearValues[0].color = { { 0.1f, 0.1f, 0.1f, 1.0f } };;
+        clearValues[1].depthStencil = { 1.0f, 0 };
+
+        VkRenderPassBeginInfo renderPassBeginInfo = Vulkan::Initializers::renderPassBeginInfo();
+        renderPassBeginInfo.renderPass = m_RenderPass->GetVkHandle();
+        renderPassBeginInfo.renderArea.offset = {0, 0};
+        renderPassBeginInfo.renderArea.extent = m_SwapChain->GetVkExtent2D();
+        renderPassBeginInfo.clearValueCount = 2;
+        renderPassBeginInfo.pClearValues = clearValues;
+
+        const VkViewport viewport = Vulkan::Initializers::viewport((float)m_SwapChain->GetVkExtent2D().width, (float)m_SwapChain->GetVkExtent2D().height, 0.0f, 1.0f);
+        const VkRect2D scissor = Vulkan::Initializers::rect2D(m_SwapChain->GetVkExtent2D().width, m_SwapChain->GetVkExtent2D().height, 0, 0);
+
+        auto &scene = g_SceneManager->GetScene();
+
+        for (size_t i = 0; i < m_CommandBuffers->GetSize(); i++)
+        {
+            renderPassBeginInfo.framebuffer = m_FrameBuffers[i]->GetVkHandle();
+
+            VkCommandBuffer vkCommandBuffer = m_CommandBuffers->Begin(i);
+            vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+
+            VkDeviceSize offsets[1] = { 0 };
+
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_VertexBuffer->GetBuffer().GetVkHandle(), offsets);
+            vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
+
+            for (const auto &node : scene.m_SceneNodes)
+                DrawNode(vkCommandBuffer, node);
+
+            vkCmdEndRenderPass(vkCommandBuffer);
+
+            m_CommandBuffers->End(i);
+        }
+    }
+
+    void GraphicsManager::DrawNode(VkCommandBuffer vkCommandBuffer, const SceneNode &node)
+    {
+        if (!node.m_Mesh.m_Primitives.empty())
+        {
+            glm::mat4 nodeMatrix = node.m_Transform.GetLocalToWorldMatrix();
+
+            vkCmdPushConstants(vkCommandBuffer, m_PipelineLayout->GetVkHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
+
+            for (auto &primitive : node.m_Mesh.m_Primitives)
+            {
+                if (primitive.IndexCount > 0)
+                {
+                    vkCmdBindDescriptorSets(vkCommandBuffer,
+                                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            m_PipelineLayout->GetVkHandle(), 1, 1,
+                                            &m_MaterialDescSets[primitive.MaterialIndex]->GetVkHandle(), 0, nullptr);
+                    vkCmdDrawIndexed(vkCommandBuffer, primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
+                }
+            }
+        }
+        for (const auto &child : node.m_Children)
+        {
+            DrawNode(vkCommandBuffer, child);
         }
     }
 }

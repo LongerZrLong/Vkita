@@ -8,6 +8,12 @@ namespace VKT::Vulkan {
         Check(vkCreateGraphicsPipelines(device.GetVkHandle(), nullptr, 1, pipelineCreateInfo, nullptr, &m_VkPipeline));
     }
 
+    Pipeline::Pipeline(const Device &device, VkComputePipelineCreateInfo *pipelineCreateInfo)
+        : m_Device(device)
+    {
+        Check(vkCreateComputePipelines(device.GetVkHandle(), nullptr, 1, pipelineCreateInfo, nullptr, &m_VkPipeline));
+    }
+
     Pipeline::~Pipeline()
     {
         if (m_VkPipeline != nullptr)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 
 #include <vulkan/vulkan.h>
 
@@ -28,11 +29,12 @@
 #include "Vulkan/PipelineLayout.h"
 #include "Vulkan/ShaderModule.h"
 
-// Temporary
 #include "Renderer/VulkanBuffer.h"
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/IndexBuffer.h"
 #include "Renderer/Texture2D.h"
+
+#include "Scene/SceneNode.h"
 
 namespace VKT {
 
@@ -47,20 +49,22 @@ namespace VKT {
 
         void Tick() override;
 
-        void Draw();
-
         const Vulkan::Device &GetDevice() const { return *m_Device; }
         const Vulkan::SwapChain &GetSwapChain() const { return *m_SwapChain; }
         const Vulkan::CommandPool &GetCommandPool() const { return *m_CommandPool; }
         const Vulkan::RenderPass &GetRenderPass() const { return *m_RenderPass; }
 
     private:
+        void InitializeGeometries();
+        void PreparePipeline();
+        void BuildCommandBuffers();
+        void DrawNode(VkCommandBuffer vkCommandBuffer, const SceneNode &node);
+
+    private:
         bool BeginFrame();
         void EndFrame();
 
         void Present();
-
-        void DeviceWaitIdle();
 
         void LogVulkanInfo();
 
@@ -106,8 +110,6 @@ namespace VKT {
 
         // TODO: Delete Testing Code
         Ref<Vulkan::DescriptorPool> m_DescriptorPool;
-        Ref<Vulkan::DescriptorSetLayout> m_DescriptorSetLayout;
-        Ref<Vulkan::DescriptorSet> m_DescriptorSet;
 
         Ref<Vulkan::PipelineLayout> m_PipelineLayout;
         Ref<Vulkan::Pipeline> m_GraphicsPipeline;
@@ -118,9 +120,38 @@ namespace VKT {
         Ref<VertexBuffer> m_VertexBuffer;
         Ref<IndexBuffer> m_IndexBuffer;
 
-        Ref<VulkanBuffer> m_UniformBuffer;
-        Ref<Texture2D> m_CheckerBoardTex;
+        struct ShaderData
+        {
+            Scope<VulkanBuffer> buffer;
+            struct Values
+            {
+                alignas(16) glm::mat4 View;
+                alignas(16) glm::mat4 Proj;
+            } values;
+        } m_ShaderData;
 
+        Scope<Vulkan::DescriptorSetLayout> m_MatricesDescSetLayout;
+        Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
+
+        Scope<Vulkan::DescriptorSet> m_MatricesDescSet;
+
+        std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
+
+        struct MaterialUBO
+        {
+            Scope<VulkanBuffer> buffer;
+            struct Values
+            {
+                alignas(4) bool HasDiffMap;
+                alignas(4) bool HasSpecMap;
+                alignas(16) glm::vec4 DiffColor;
+                alignas(16) glm::vec4 SpecColor;
+            } values;
+        };
+        std::vector<MaterialUBO> m_MaterialUniformBuffers;
+        std::unordered_map<std::string, Scope<Texture2D>> m_Textures;
+
+        bool m_Prepared = false;
     };
 
     extern GraphicsManager *g_GraphicsManager;

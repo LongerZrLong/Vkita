@@ -14,14 +14,14 @@
 namespace VKT {
 
     Texture2D::Texture2D(const Image &img)
-        : m_Width(img.m_Width), m_Height(img.m_Height)
+        : m_Width(img.m_Width), m_Height(img.m_Height), m_Descriptor()
     {
         PrepareTexture2D();
         SetData(img.m_Data, img.m_DataSize);
     }
 
     Texture2D::Texture2D(uint32_t width, uint32_t height)
-        : m_Width(width), m_Height(height)
+        : m_Width(width), m_Height(height), m_Descriptor()
     {
         PrepareTexture2D();
     }
@@ -62,9 +62,9 @@ namespace VKT {
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_NEAREST;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.anisotropyEnable = true;
         samplerInfo.maxAnisotropy = 16;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -77,6 +77,10 @@ namespace VKT {
         samplerInfo.maxLod = 0.0f;
 
         m_Sampler = CreateScope<Vulkan::Sampler>(device, &samplerInfo);
+
+        m_Descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_Descriptor.imageView = m_ImageView->GetVkHandle();
+        m_Descriptor.sampler = m_Sampler->GetVkHandle();
     }
 
     Texture2D::~Texture2D()

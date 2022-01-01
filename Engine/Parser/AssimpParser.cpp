@@ -8,6 +8,7 @@
 namespace VKT {
 
     static const auto importerFlags =
+        aiProcess_FlipUVs |
         aiProcess_CalcTangentSpace |
         aiProcess_GenSmoothNormals |
         aiProcess_JoinIdenticalVertices |
@@ -130,27 +131,21 @@ namespace VKT {
 
     void AssimpParser::ProcessNode(aiNode *pNode, Ref<Scene> &scene, SceneNode *parent)
     {
-        Scope<SceneNode> *ptr;
-        if (parent)
-        {
-            ptr = &parent->m_Children.emplace_back(CreateScope<SceneNode>());
-        }
-        else
-        {
-            ptr = &scene->m_SceneNodes.emplace_back(CreateScope<SceneNode>());
-        }
-
-        Scope<SceneNode> &node = *ptr;
+        SceneNode sceneNode{};
+        SceneNode *node = &sceneNode;
 
         node->m_Name = pNode->mName.C_Str();
 
         // Note: aiMatrix4x4 is row major. glm::mat4 is column major.
         aiMatrix4x4 mat = pNode->mTransformation;
         node->m_Transform.SetMatrix4x4(glm::transpose(glm::make_mat4x4(&mat[0][0])));
+        node->m_Transform.SetNode(node);
+
+        // Record parent in
 
         for (size_t i = 0; i < pNode->mNumChildren; i++)
         {
-            ProcessNode(pNode->mChildren[i], scene, node.get());
+            ProcessNode(pNode->mChildren[i], scene, node);
         }
 
         for (size_t j = 0; j < pNode->mNumMeshes; j++)
@@ -204,6 +199,15 @@ namespace VKT {
             primitive.MaterialIndex = pMesh->mMaterialIndex;
 
             node->m_Mesh.m_Primitives.emplace_back(primitive);
+        }
+
+        if (parent)
+        {
+            parent->m_Children.emplace_back(sceneNode);
+        }
+        else
+        {
+            scene->m_SceneNodes.emplace_back(sceneNode);
         }
 
     }

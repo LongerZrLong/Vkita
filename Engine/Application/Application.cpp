@@ -1,9 +1,13 @@
 #include "Application.h"
 
+#include "Core/Log.h"
+
 namespace VKT {
 
     int Application::Initialize()
     {
+        Log::Init();
+
         m_Window = CreateScope<Window>();
         m_Window->SetEventCallback([this](Event &event) { Application::OnEvent(event); });
 

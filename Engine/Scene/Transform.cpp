@@ -6,13 +6,12 @@
 
 namespace VKT {
 
-    Transform::Transform(SceneNode &node)
+    Transform::Transform(SceneNode *node)
         : position_(0.f),
           rotation_(glm::quat(1.f, 0.f, 0.f, 0.f)),
           scale_(glm::vec3(1.f)),
           node_(node)
     {
-        (void)node;
         UpdateLocalTransformMatrix();
     }
 
@@ -47,6 +46,11 @@ namespace VKT {
         glm::decompose(T, scale_, rotation_, position_, skew, perspective);
         // Won't use skew or perspective.
         UpdateLocalTransformMatrix();
+    }
+
+    void Transform::SetNode(SceneNode *node)
+    {
+        node_ = node;
     }
 
     glm::vec3 Transform::GetForwardDirection() const
@@ -91,7 +95,7 @@ namespace VKT {
 
     glm::mat4 Transform::GetLocalToAncestorMatrix(SceneNode *ancestor) const
     {
-        SceneNode *parent = node_.m_Parent;
+        SceneNode *parent = node_->m_Parent;
         if (parent == ancestor)
         {
             return local_transform_mat_;

@@ -26,9 +26,6 @@ namespace VKT {
 
         std::string m_NormalTextureName;
 
-        VkDescriptorSet m_VkDescriptorSet;
-        VkPipeline m_VkPipeline;
-
     };
 
 }
