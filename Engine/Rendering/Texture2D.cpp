@@ -24,8 +24,8 @@ namespace VKT::Rendering {
 
     void Texture2D::SetData(void *data, uint32_t size)
     {
-        const VKT::Vulkan::Device &device = g_GraphicsManager->GetDevice();
-        const VKT::Vulkan::CommandPool &commandPool = g_GraphicsManager->GetCommandPool();
+        const VKT::Vulkan::Device &device = g_GraphicsManager->GetContext().GetDevice();
+        const VKT::Vulkan::CommandPool &commandPool = g_GraphicsManager->GetContext().GetCommandPool();
 
         // Create a host staging buffer and copy the image into it.
         VkDeviceSize imageSize = size;
@@ -47,7 +47,7 @@ namespace VKT::Rendering {
 
     void Texture2D::PrepareTexture2D()
     {
-        const VKT::Vulkan::Device &device = g_GraphicsManager->GetDevice();
+        const VKT::Vulkan::Device &device = g_GraphicsManager->GetContext().GetDevice();
 
         // Create the device side image, memory, view and sampler.
         m_Image = CreateScope<VKT::Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);

@@ -4,7 +4,6 @@
 
 #include "Config.h"
 #include "Log.h"
-#include "Image.h"
 #include "FileSystem.h"
 #include "SceneManager.h"
 
@@ -13,40 +12,21 @@
 #include "Math/Glm.h"
 
 #include "Vulkan/Initializers.h"
-#include "Vulkan/ImageView.h"
-#include "Vulkan/Sampler.h"
 
 namespace VKT {
 
     int GraphicsManager::Initialize()
     {
-        const auto validationLayers = Config::kEnableValidationLayers
-                                      ? std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" }
-                                      : std::vector<const char*>();
-
-        m_Instance = CreateScope<Vulkan::Instance>(g_App->GetWindow(), validationLayers, VK_API_VERSION_1_2);
-        m_DebugUtilsMessenger = Config::kEnableValidationLayers?
-            CreateScope<Vulkan::DebugUtilsMessenger>(*m_Instance, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) : nullptr;
-        m_Surface = CreateScope<Vulkan::Surface>(*m_Instance);
-
-        CreateDevice();
-
-        // Create swap chain and command buffers
-        CreateSwapChain();
-
-        CreateSyncObjects();
-
-        LogVulkanInfo();
-
+        m_Ctx = CreateScope<Rendering::Context>();
+        
+        m_Ctx->Initialize();
+        
         return 0;
     }
 
     void GraphicsManager::ShutDown()
     {
-        m_Device->WaitIdle();
-
-        DeleteSwapChain();
-        DeleteSyncObjects();
+        m_Ctx->ShutDown();
     }
 
     void GraphicsManager::Tick()
@@ -68,158 +48,17 @@ namespace VKT {
         Present();
     }
 
-    const std::vector<VkExtensionProperties> &GraphicsManager::GetExtensions() const
-    {
-        return m_Instance->GetVkExtensionProps();
-    }
-
-    const std::vector<VkLayerProperties> &GraphicsManager::GetLayers() const
-    {
-        return m_Instance->GetVkLayerProps();
-    }
-
-    const std::vector<VkPhysicalDevice> &GraphicsManager::GetPhysicalDevices() const
-    {
-        return m_Instance->GetVkPhysicalDevices();
-    }
-
-    void GraphicsManager::SetPhysicalDevice(VkPhysicalDevice physicalDevice)
-    {
-        if (m_Device)
-        {
-            throw std::logic_error("physical device has already been set");
-        }
-
-        std::vector<const char*> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-#ifdef __APPLE__
-        requiredExtensions.push_back("VK_KHR_portability_subset");
-#endif
-
-        VkPhysicalDeviceFeatures deviceFeatures = {};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.sampleRateShading = VK_TRUE;
-
-        m_Device = CreateScope<Vulkan::Device>(physicalDevice, *m_Surface, requiredExtensions, deviceFeatures, nullptr);
-        m_CommandPool = CreateScope<Vulkan::CommandPool>(*m_Device, m_Device->GetGraphicsFamilyIndex(), true);
-    }
-
-    void GraphicsManager::CreateDevice()
-    {
-        const auto &physicalDevices = GetPhysicalDevices();
-        const auto result = std::find_if(physicalDevices.begin(), physicalDevices.end(), [](const VkPhysicalDevice& device)
-        {
-            // We want a device with geometry shader support.
-            VkPhysicalDeviceFeatures deviceFeatures;
-            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-            // We want a device with a graphics queue.
-            const auto queueFamilies = Vulkan::GetEnumerateVector(device, vkGetPhysicalDeviceQueueFamilyProperties);
-            const auto hasGraphicsQueue = std::find_if(queueFamilies.begin(), queueFamilies.end(), [](const VkQueueFamilyProperties& queueFamily)
-            {
-                return queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-            });
-
-            return hasGraphicsQueue != queueFamilies.end();
-        });
-
-        if (result == physicalDevices.end())
-        {
-            throw std::runtime_error("cannot find a suitable device");
-        }
-
-        VkPhysicalDeviceProperties2 deviceProp{};
-        deviceProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        vkGetPhysicalDeviceProperties2(*result, &deviceProp);
-
-        SetPhysicalDevice(*result);
-    }
-
-    void GraphicsManager::CreateSwapChain()
-    {
-        // Wait until the window is visible.
-        while (g_App->IsMinimized())
-        {
-            g_App->GetWindow().WaitForEvents();
-        }
-
-        m_SwapChain = CreateScope<Vulkan::SwapChain>(*m_Device, Config::kVkPresentMode);
-        m_DepthBuffer = CreateScope<Vulkan::DepthBuffer>(*m_Device, *m_CommandPool, m_SwapChain->GetVkExtent2D());
-        m_RenderPass = CreateScope<Vulkan::RenderPass>(*m_Device, *m_SwapChain, *m_DepthBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
-
-        for (const auto &imageView : m_SwapChain->GetImageViews())
-        {
-            m_FrameBuffers.emplace_back(CreateScope<Vulkan::FrameBuffer>(*m_Device, *imageView, *m_RenderPass));
-        }
-
-        m_CommandBuffers = CreateScope<Vulkan::CommandBuffers>(*m_Device, *m_CommandPool, m_FrameBuffers.size());
-
-        m_ImagesInFlight.resize(m_SwapChain->GetVkImages().size(), VK_NULL_HANDLE);
-    }
-
-    void GraphicsManager::DeleteSwapChain()
-    {
-        m_CommandBuffers.reset();
-        m_FrameBuffers.clear();
-        m_RenderPass.reset();
-        m_DepthBuffer.reset();
-        m_SwapChain.reset();
-    }
-
-    void GraphicsManager::CreateSyncObjects()
-    {
-        m_ImageAvailableSemaphores.resize(Config::kMaxInFlightFrameCount);
-        m_RenderFinishedSemaphores.resize(Config::kMaxInFlightFrameCount);
-        m_InFlightFences.resize(Config::kMaxInFlightFrameCount);
-        m_ImagesInFlight.resize(m_SwapChain->GetVkImages().size(), VK_NULL_HANDLE);
-
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
-        {
-            if (vkCreateSemaphore(m_Device->GetVkHandle(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(m_Device->GetVkHandle(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(m_Device->GetVkHandle(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
-            }
-        }
-    }
-
-    void GraphicsManager::DeleteSyncObjects()
-    {
-        for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
-        {
-            vkDestroySemaphore(m_Device->GetVkHandle(), m_RenderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(m_Device->GetVkHandle(), m_ImageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(m_Device->GetVkHandle(), m_InFlightFences[i], nullptr);
-        }
-    }
-
-    void GraphicsManager::RecreateSwapChain()
-    {
-        m_Device->WaitIdle();
-        DeleteSwapChain();
-        CreateSwapChain();
-
-        m_Prepared = false;
-    }
-
     bool GraphicsManager::BeginFrame()
     {
-        vkWaitForFences(m_Device->GetVkHandle(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        VkResult result = m_SwapChain->AcquireNextImage(m_ImageAvailableSemaphores[m_CurrentFrame], &imageIndex);
+        VkResult result = m_Ctx->swapChain->AcquireNextImage(m_Ctx->imageAvailableSemaphores[m_Ctx->currentFrame], &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            RecreateSwapChain();
+            m_Ctx->RecreateSwapChain();
+            m_Prepared = false;
             return false;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -228,14 +67,14 @@ namespace VKT {
         }
 
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
-        if (m_ImagesInFlight[imageIndex] != nullptr)
+        if (m_Ctx->imagesInFlight[imageIndex] != nullptr)
         {
-            vkWaitForFences(m_Device->GetVkHandle(), 1, &m_ImagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            vkWaitForFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
         }
         // Mark the image as now being in use by this frame
-        m_ImagesInFlight[imageIndex] = m_InFlightFences[m_CurrentFrame];
+        m_Ctx->imagesInFlight[imageIndex] = m_Ctx->inFlightFences[m_Ctx->currentFrame];
 
-        m_CurrentImageIndex = imageIndex;
+        m_Ctx->currentImageIndex = imageIndex;
 
         return true;
     }
@@ -244,8 +83,8 @@ namespace VKT {
     {
         VkSubmitInfo submitInfo = Vulkan::Initializers::submitInfo();
 
-        VkCommandBuffer commandBuffers[] = { (*m_CommandBuffers)[m_CurrentImageIndex] };
-        VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
+        VkCommandBuffer commandBuffers[] = { (*m_Ctx->cmdBuffers)[m_Ctx->currentImageIndex] };
+        VkSemaphore waitSemaphores[] = {m_Ctx->imageAvailableSemaphores[m_Ctx->currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         submitInfo.waitSemaphoreCount = 1;
@@ -255,76 +94,33 @@ namespace VKT {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = commandBuffers;
 
-        VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+        VkSemaphore signalSemaphores[] = {m_Ctx->renderFinishedSemaphores[m_Ctx->currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkResetFences(m_Device->GetVkHandle(), 1, &m_InFlightFences[m_CurrentFrame]);
+        vkResetFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame]);
 
-        if (vkQueueSubmit(m_Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) != VK_SUCCESS)
+        if (vkQueueSubmit(m_Ctx->device->GetGraphicsQueue(), 1, &submitInfo, m_Ctx->inFlightFences[m_Ctx->currentFrame]) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
-        m_CurrentFrame = (m_CurrentFrame + 1) % Config::kMaxInFlightFrameCount;
+        m_Ctx->currentFrame = (m_Ctx->currentFrame + 1) % Config::kMaxInFlightFrameCount;
     }
 
     void GraphicsManager::Present()
     {
-        size_t prevFrame = (m_CurrentFrame - 1) % Config::kMaxInFlightFrameCount;
-        VkResult result = m_SwapChain->QueuePresent(m_Device->GetPresentQueue(), m_CurrentImageIndex, m_RenderFinishedSemaphores[prevFrame]);
+        size_t prevFrame = (m_Ctx->currentFrame - 1) % Config::kMaxInFlightFrameCount;
+        VkResult result = m_Ctx->swapChain->QueuePresent(m_Ctx->device->GetPresentQueue(), m_Ctx->currentImageIndex, m_Ctx->renderFinishedSemaphores[prevFrame]);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
-            RecreateSwapChain();
+            m_Ctx->RecreateSwapChain();
+            m_Prepared = false;
         }
         else if (result != VK_SUCCESS)
         {
             throw std::runtime_error("failed to present swap chain image!");
-        }
-    }
-
-    void GraphicsManager::LogVulkanInfo()
-    {
-        VKT_CORE_INFO("Vulkan SDK Header Version: {}", VK_HEADER_VERSION);
-
-        VKT_CORE_INFO("Vulkan Instance Extensions: ");
-        for (const auto &extension : GetExtensions())
-            VKT_CORE_INFO("-  {} ({})", extension.extensionName, Vulkan::Version(extension.specVersion));
-
-        VKT_CORE_INFO("Vulkan Instance Layers: ");
-        for (const auto &layer : GetLayers())
-            VKT_CORE_INFO("-  {} ({}) : {}", layer.layerName, Vulkan::Version(layer.specVersion), layer.description);
-
-        VKT_CORE_INFO("Vulkan Devices: ");
-        for (const auto &device : GetPhysicalDevices())
-        {
-            VkPhysicalDeviceDriverProperties driverProp{};
-            driverProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
-
-            VkPhysicalDeviceProperties2 deviceProp{};
-            deviceProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-            deviceProp.pNext = &driverProp;
-
-            vkGetPhysicalDeviceProperties2(device, &deviceProp);
-
-            VkPhysicalDeviceFeatures features;
-            vkGetPhysicalDeviceFeatures(device, &features);
-
-            const auto& prop = deviceProp.properties;
-
-            const Vulkan::Version vulkanVersion(prop.apiVersion);
-            const Vulkan::Version driverVersion(prop.driverVersion, prop.vendorID);
-
-            VKT_CORE_INFO("-  [{}] {} '{}' ({}: vulkan {}, driver {} {} - {})",
-                          prop.deviceID,
-                          Vulkan::Strings::VendorId(prop.vendorID),
-                          prop.deviceName,
-                          Vulkan::Strings::DeviceType(prop.deviceType),
-                          vulkanVersion,
-                          driverProp.driverName,
-                          driverProp.driverInfo,
-                          driverVersion);
         }
     }
 
@@ -379,7 +175,7 @@ namespace VKT {
 
         const uint32_t maxSetCount = 1 + scene.m_Materials.size();
         VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
-        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Device, &descriptorPoolInfo);
+        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Ctx->device, &descriptorPoolInfo);
 
         // Descriptor set layout for shader data matrices (View + Proj matrices)
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
@@ -387,7 +183,7 @@ namespace VKT {
             Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
         };
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-        m_MatricesDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
+        m_MatricesDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor Set layout for each material
         setLayoutBindings =
@@ -397,11 +193,11 @@ namespace VKT {
             Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2),
         };
         descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-        m_MaterialDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Device, &descriptorSetLayoutCI);
+        m_MaterialDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor Set for shader data matrices
         auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MatricesDescSetLayout->GetVkHandle(), 1);
-        m_MatricesDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
+        m_MatricesDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
 
         // Descriptor Set for each material
         allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MaterialDescSetLayout->GetVkHandle(), 1);
@@ -409,7 +205,7 @@ namespace VKT {
         for (size_t i = 0; i < scene.m_Materials.size(); i++)
         {
             allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MaterialDescSetLayout->GetVkHandle(), 1);
-            m_MaterialDescSets[i] = CreateScope<Vulkan::DescriptorSet>(*m_Device, &allocInfo);
+            m_MaterialDescSets[i] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
         }
 
         // Write Descriptor Set for shader data matrices
@@ -439,8 +235,8 @@ namespace VKT {
 
     void GraphicsManager::PreparePipeline()
     {
-        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
-        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
+        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
+        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
 
         // Pipeline layout
         std::array<VkDescriptorSetLayout, 2> setLayouts = { m_MatricesDescSetLayout->GetVkHandle(), m_MaterialDescSetLayout->GetVkHandle() };
@@ -448,7 +244,7 @@ namespace VKT {
         VkPushConstantRange pushConstantRange = Vulkan::Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), 0);
         pipelineLayoutCI.pushConstantRangeCount = 1;
         pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
-        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Device, &pipelineLayoutCI);
+        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
 
         // Create Graphics Pipeline
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
@@ -472,7 +268,7 @@ namespace VKT {
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
 
-        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_RenderPass->GetVkHandle(), 0);
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_Ctx->renderPass->GetVkHandle(), 0);
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pRasterizationState = &rasterizationStateCI;
@@ -484,7 +280,7 @@ namespace VKT {
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.pDynamicState = &dynamicStateCI;
 
-        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Device, &pipelineCI);
+        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
     }
 
     void GraphicsManager::BuildCommandBuffers()
@@ -494,22 +290,22 @@ namespace VKT {
         clearValues[1].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassBeginInfo = Vulkan::Initializers::renderPassBeginInfo();
-        renderPassBeginInfo.renderPass = m_RenderPass->GetVkHandle();
+        renderPassBeginInfo.renderPass = m_Ctx->renderPass->GetVkHandle();
         renderPassBeginInfo.renderArea.offset = {0, 0};
-        renderPassBeginInfo.renderArea.extent = m_SwapChain->GetVkExtent2D();
+        renderPassBeginInfo.renderArea.extent = m_Ctx->swapChain->GetVkExtent2D();
         renderPassBeginInfo.clearValueCount = 2;
         renderPassBeginInfo.pClearValues = clearValues;
 
-        const VkViewport viewport = Vulkan::Initializers::viewport((float)m_SwapChain->GetVkExtent2D().width, (float)m_SwapChain->GetVkExtent2D().height, 0.0f, 1.0f);
-        const VkRect2D scissor = Vulkan::Initializers::rect2D(m_SwapChain->GetVkExtent2D().width, m_SwapChain->GetVkExtent2D().height, 0, 0);
+        const VkViewport viewport = Vulkan::Initializers::viewport((float)m_Ctx->swapChain->GetVkExtent2D().width, (float)m_Ctx->swapChain->GetVkExtent2D().height, 0.0f, 1.0f);
+        const VkRect2D scissor = Vulkan::Initializers::rect2D(m_Ctx->swapChain->GetVkExtent2D().width, m_Ctx->swapChain->GetVkExtent2D().height, 0, 0);
 
         auto &scene = g_SceneManager->GetScene();
 
-        for (size_t i = 0; i < m_CommandBuffers->GetSize(); i++)
+        for (size_t i = 0; i < m_Ctx->cmdBuffers->GetSize(); i++)
         {
-            renderPassBeginInfo.framebuffer = m_FrameBuffers[i]->GetVkHandle();
+            renderPassBeginInfo.framebuffer = m_Ctx->frameBuffers[i]->GetVkHandle();
 
-            VkCommandBuffer vkCommandBuffer = m_CommandBuffers->Begin(i);
+            VkCommandBuffer vkCommandBuffer = m_Ctx->cmdBuffers->Begin(i);
             vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
@@ -526,7 +322,7 @@ namespace VKT {
 
             vkCmdEndRenderPass(vkCommandBuffer);
 
-            m_CommandBuffers->End(i);
+            m_Ctx->cmdBuffers->End(i);
         }
     }
 

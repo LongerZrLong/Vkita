@@ -9,7 +9,7 @@ namespace VKT::Rendering {
     {
         const auto bufferSize = size;
 
-        m_Buffer = CreateScope<VKT::Vulkan::Buffer>(g_GraphicsManager->GetDevice(), bufferSize, usageFlags);
+        m_Buffer = CreateScope<VKT::Vulkan::Buffer>(g_GraphicsManager->GetContext().GetDevice(), bufferSize, usageFlags);
         m_DeviceMemory = CreateScope<VKT::Vulkan::DeviceMemory>(m_Buffer->AllocateMemory(propertyFlags));
 
         m_Descriptor.buffer = m_Buffer->GetVkHandle();
@@ -39,7 +39,7 @@ namespace VKT::Rendering {
         mappedRange.memory = m_DeviceMemory->GetVkHandle();
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkFlushMappedMemoryRanges(g_GraphicsManager->GetDevice().GetVkHandle(), 1, &mappedRange);
+        return vkFlushMappedMemoryRanges(g_GraphicsManager->GetContext().GetDevice().GetVkHandle(), 1, &mappedRange);
     }
 
     bool Buffer::Invalidate(size_t size, size_t offset)
@@ -49,7 +49,7 @@ namespace VKT::Rendering {
         mappedRange.memory = m_DeviceMemory->GetVkHandle();
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkInvalidateMappedMemoryRanges(g_GraphicsManager->GetDevice().GetVkHandle(), 1, &mappedRange);
+        return vkInvalidateMappedMemoryRanges(g_GraphicsManager->GetContext().GetDevice().GetVkHandle(), 1, &mappedRange);
     }
 
 }
