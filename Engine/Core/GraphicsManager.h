@@ -76,6 +76,15 @@ namespace VKT {
             } values;
         } m_ShaderData;
 
+        struct Camera
+        {
+            glm::vec3 Eye = {0.0f, 10.0f, 30.0f};
+            glm::vec3 Center = {0.0f, 10.0f, 0.0f};
+            glm::vec3 Up = {0.0f, 1.0f, 0.0f};
+        } m_Camera;
+
+        friend class InputManager;
+
         Scope<Vulkan::DescriptorSetLayout> m_MatricesDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
 

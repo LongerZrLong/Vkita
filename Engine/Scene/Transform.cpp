@@ -1,16 +1,11 @@
 #include "Transform.h"
 
-#include <stdexcept>
-
-#include "SceneNode.h"
-
 namespace VKT {
 
-    Transform::Transform(SceneNode *node)
+    Transform::Transform()
         : position_(0.f),
           rotation_(glm::quat(1.f, 0.f, 0.f, 0.f)),
-          scale_(glm::vec3(1.f)),
-          node_(node)
+          scale_(glm::vec3(1.f))
     {
         UpdateLocalTransformMatrix();
     }
@@ -48,74 +43,6 @@ namespace VKT {
         UpdateLocalTransformMatrix();
     }
 
-    void Transform::SetNode(SceneNode *node)
-    {
-        node_ = node;
-    }
-
-    glm::vec3 Transform::GetForwardDirection() const
-    {
-        return glm::mat3_cast(rotation_) * GetWorldForward();
-    }
-
-    glm::vec3 Transform::GetUpDirection() const
-    {
-        return glm::mat3_cast(rotation_) * GetWorldUp();
-    }
-
-    glm::vec3 Transform::GetRightDirection() const
-    {
-        return glm::mat3_cast(rotation_) * GetWorldRight();
-    }
-
-    glm::vec3 Transform::GetWorldUp()
-    {
-        return glm::vec3(0.f, 1.f, 0.f);
-    }
-
-    glm::vec3 Transform::GetWorldRight()
-    {
-        return glm::vec3(1.f, 0.f, 0.f);
-    }
-
-    glm::vec3 Transform::GetWorldForward()
-    {
-        return glm::vec3(0.f, 0.f, -1.f);
-    }
-
-    glm::vec3 Transform::GetWorldPosition() const
-    {
-        return glm::vec3(GetLocalToWorldMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    }
-
-    glm::mat4 Transform::GetLocalToParentMatrix() const
-    {
-        return local_transform_mat_;
-    }
-
-    glm::mat4 Transform::GetLocalToAncestorMatrix(SceneNode *ancestor) const
-    {
-        SceneNode *parent = node_->m_Parent;
-        if (parent == ancestor)
-        {
-            return local_transform_mat_;
-        }
-        else
-        {
-            if (parent == nullptr)
-            {
-                throw std::runtime_error("Ancestor does not exist!");
-            }
-            return parent->m_Transform.GetLocalToAncestorMatrix(ancestor) *
-                   local_transform_mat_;
-        }
-    }
-
-    glm::mat4 Transform::GetLocalToWorldMatrix() const
-    {
-        return GetLocalToAncestorMatrix(nullptr);
-    }
-
     void Transform::UpdateLocalTransformMatrix()
     {
         glm::mat4 new_matrix(1.f);
@@ -125,7 +52,7 @@ namespace VKT {
         new_matrix = glm::mat4_cast(rotation_) * new_matrix;
         new_matrix = glm::translate(glm::mat4(1.f), position_) * new_matrix;
 
-        local_transform_mat_ = std::move(new_matrix);
+        local_transform_mat_ = new_matrix;
     }
 
 }

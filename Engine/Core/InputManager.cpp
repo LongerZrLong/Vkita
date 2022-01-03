@@ -35,6 +35,20 @@ namespace VKT {
         return state == GLFW_PRESS;
     }
 
+    bool InputManager::IsKeyRelease(KeyCode key)
+    {
+        auto window = static_cast<GLFWwindow*>(g_App->GetWindow().GetNativeWindow());
+        auto state = glfwGetKey(window, static_cast<int32_t>(key));
+        return state == GLFW_RELEASE;
+    }
+
+    bool InputManager::IsMouseButtonRelease(MouseCode button)
+    {
+        auto window = static_cast<GLFWwindow*>(g_App->GetWindow().GetNativeWindow());
+        auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));
+        return state == GLFW_RELEASE;
+    }
+
     glm::vec2 InputManager::GetMousePosition()
     {
         auto window = static_cast<GLFWwindow*>(g_App->GetWindow().GetNativeWindow());

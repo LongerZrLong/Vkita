@@ -6,6 +6,7 @@
 #include "Log.h"
 #include "FileSystem.h"
 #include "SceneManager.h"
+#include "InputManager.h"
 
 #include "Application/Application.h"
 
@@ -39,6 +40,31 @@ namespace VKT {
 
             m_Prepared = true;
         }
+
+        if (g_InputManager->IsKeyPressed(Key::Left) || g_InputManager->IsKeyPressed(Key::Right))
+        {
+            auto &camera = g_GraphicsManager->m_Camera;
+
+            glm::vec3 dir = camera.Eye - camera.Center;
+
+            static float speed = 0.01f;
+
+            glm::mat4 rot(1.0f);
+
+            if (g_InputManager->IsKeyPressed(Key::Left))
+                rot = glm::rotate(rot, speed * glm::pi<float>(), camera.Up);
+
+            else if (g_InputManager->IsKeyPressed(Key::Right))
+                rot = glm::rotate(rot, -speed * glm::pi<float>(), camera.Up);
+
+            dir = glm::vec3(rot * glm::vec4(dir, 1.0f));
+
+            camera.Eye = camera.Center + dir;
+        }
+
+        // Update Shader Data
+        m_ShaderData.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
+        m_ShaderData.buffer->Update(&m_ShaderData.values);
 
         if (!BeginFrame())
             return;
@@ -159,7 +185,7 @@ namespace VKT {
         m_ShaderData.values.Proj = glm::perspective(glm::radians(45.0f), g_App->GetWindow().GetWidth() / (float) g_App->GetWindow().GetHeight(), 0.1f, 1000.0f);
         m_ShaderData.values.Proj[1][1] *= -1;
 
-        m_ShaderData.values.View = glm::lookAt(glm::vec3(0.0f, 10.0f, 30.0f), glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        m_ShaderData.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
 
         m_ShaderData.buffer->Update(&m_ShaderData.values);
 
@@ -330,7 +356,14 @@ namespace VKT {
     {
         if (!node.m_Mesh.m_Primitives.empty())
         {
-            glm::mat4 nodeMatrix = node.m_Transform.GetLocalToWorldMatrix();
+            // Get the local to world transform matrix
+            glm::mat4 nodeMatrix = node.m_Transform.GetMatrix();
+            SceneNode *parent = node.m_Parent;
+            while (parent)
+            {
+                nodeMatrix = parent->m_Transform.GetMatrix() * nodeMatrix;
+                parent = parent->m_Parent;
+            }
 
             vkCmdPushConstants(vkCommandBuffer, m_PipelineLayout->GetVkHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
 

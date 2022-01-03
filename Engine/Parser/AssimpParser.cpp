@@ -131,17 +131,19 @@ namespace VKT {
 
     void AssimpParser::ProcessNode(aiNode *pNode, Ref<Scene> &scene, SceneNode *parent)
     {
-        SceneNode sceneNode{};
-        SceneNode *node = &sceneNode;
+        if (parent)
+            parent->m_Children.emplace_back(SceneNode());
+        else
+            scene->m_SceneNodes.emplace_back(SceneNode());
+
+        SceneNode *node = parent ? &parent->m_Children[parent->m_Children.size() - 1] : &scene->m_SceneNodes[scene->m_SceneNodes.size() - 1];
 
         node->m_Name = pNode->mName.C_Str();
+        node->m_Parent = parent;
 
         // Note: aiMatrix4x4 is row major. glm::mat4 is column major.
         aiMatrix4x4 mat = pNode->mTransformation;
         node->m_Transform.SetMatrix4x4(glm::transpose(glm::make_mat4x4(&mat[0][0])));
-        node->m_Transform.SetNode(node);
-
-        // Record parent in
 
         for (size_t i = 0; i < pNode->mNumChildren; i++)
         {
@@ -199,15 +201,6 @@ namespace VKT {
             primitive.MaterialIndex = pMesh->mMaterialIndex;
 
             node->m_Mesh.m_Primitives.emplace_back(primitive);
-        }
-
-        if (parent)
-        {
-            parent->m_Children.emplace_back(sceneNode);
-        }
-        else
-        {
-            scene->m_SceneNodes.emplace_back(sceneNode);
         }
 
     }
