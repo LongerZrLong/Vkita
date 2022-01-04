@@ -62,10 +62,15 @@ add_dependencies(${PROJECT_NAME} Shaders)
 add_subdirectory(External/stb_image)
 target_link_libraries(${PROJECT_NAME} PUBLIC stb_image)
 
-# Assimp
-add_subdirectory(External/Assimp)
+# assimp
+add_subdirectory(External/assimp)
 target_link_libraries(${PROJECT_NAME} PUBLIC assimp)
 
 # ktx
 add_subdirectory(External/ktx)
 target_link_libraries(${PROJECT_NAME} PUBLIC ktx)
+
+# bullet3
+add_subdirectory(External/bullet3)
+target_link_libraries(${PROJECT_NAME} PUBLIC BulletInverseDynamics BulletSoftBody BulletCollision BulletDynamics LinearMath Bullet3Common)
+target_include_directories(${PROJECT_NAME} PUBLIC External/bullet3/src)
