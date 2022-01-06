@@ -16,14 +16,18 @@ namespace VKT {
         // The actual physics solver
         m_btSolver = new btSequentialImpulseConstraintSolver;
 
+        // The world
+        m_btDynamicsWorld = new btDiscreteDynamicsWorld(m_btDispatcher, m_btBroadphase, m_btSolver, m_btCollisionConfiguration);
+        m_btDynamicsWorld->setGravity(btVector3(0.0f, -9.8f, 0.0f));
+
         return 0;
     }
 
     void PhysicsManager::ShutDown()
     {
-        // Clean up
         ClearRigidBodies();
 
+        delete m_btDynamicsWorld;
         delete m_btSolver;
         delete m_btDispatcher;
         delete m_btCollisionConfiguration;
@@ -54,9 +58,11 @@ namespace VKT {
 
                 glm::mat4 matrix = node.GetLocalToWorldMatrix();
 
-                auto *motionState = new btDefaultMotionState(
-                    btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f),
-                                btVector3(matrix[3][0], matrix[3][1], matrix[3][2])));
+                btTransform startTransform;
+                startTransform.setIdentity();
+                startTransform.setOrigin(btVector3(matrix[3][0], matrix[3][1], matrix[3][2]));
+
+                auto *motionState = new btDefaultMotionState(startTransform);
 
                 btScalar mass = 1.0f;
                 btVector3 fallInertia(0.0f, 0.0f, 0.0f);
@@ -76,11 +82,14 @@ namespace VKT {
 
                 glm::mat4 matrix = node.GetLocalToWorldMatrix();
 
-                auto *motionState = new btDefaultMotionState(
-                    btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f),
-                                btVector3(matrix[3][0], matrix[3][1], matrix[3][2])));
+                btTransform startTransform;
+                startTransform.setIdentity();
+                startTransform.setOrigin(btVector3(matrix[3][0], matrix[3][1], matrix[3][2]));
 
-                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(0.0f, motionState, box, btVector3(0.0f, 0.0f, 0.0f));
+                auto *motionState = new btDefaultMotionState(startTransform);
+
+                btScalar mass = 0.0f;
+                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass, motionState, box, btVector3(0.0f, 0.0f, 0.0f));
                 rigidBody = new btRigidBody(rigidBodyCI);
 
                 m_btDynamicsWorld->addRigidBody(rigidBody);
@@ -94,11 +103,14 @@ namespace VKT {
 
                 glm::mat4 matrix = node.GetLocalToWorldMatrix();
 
-                auto *motionState = new btDefaultMotionState(
-                    btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f),
-                                btVector3(matrix[3][0], matrix[3][1], matrix[3][2])));
+                btTransform startTransform;
+                startTransform.setIdentity();
+                startTransform.setOrigin(btVector3(matrix[3][0], matrix[3][1], matrix[3][2]));
 
-                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(0.0f, motionState, plane, btVector3(0.0f, 0.0f, 0.0f));
+                auto *motionState = new btDefaultMotionState(startTransform);
+
+                btScalar mass = 0.0f;
+                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass, motionState, plane, btVector3(0.0f, 0.0f, 0.0f));
                 rigidBody = new btRigidBody(rigidBodyCI);
 
                 m_btDynamicsWorld->addRigidBody(rigidBody);
@@ -136,8 +148,11 @@ namespace VKT {
     void PhysicsManager::DeleteRigidBody(SceneNode &node)
     {
         auto *rigidBody = reinterpret_cast<btRigidBody*>(node.UnlinkRigidBody());
+
         if (rigidBody)
         {
+            m_btDynamicsWorld->removeRigidBody(rigidBody);
+
             delete rigidBody->getMotionState();
             delete rigidBody;
         }
@@ -145,10 +160,6 @@ namespace VKT {
 
     int PhysicsManager::CreateRigidBodies()
     {
-        // The world
-        m_btDynamicsWorld = new btDiscreteDynamicsWorld(m_btDispatcher, m_btBroadphase, m_btSolver, m_btCollisionConfiguration);
-        m_btDynamicsWorld->setGravity(btVector3(0.0f, -9.8f, 0.0f));
-
         auto &scene = g_SceneManager->GetScene();
 
         for (auto &node : scene.m_SceneNodes)
@@ -174,8 +185,6 @@ namespace VKT {
         }
 
         m_btCollisionShapes.clear();
-
-        delete m_btDynamicsWorld;
     }
 
     glm::mat4 PhysicsManager::GetRigidBodyTransform(void *rigidBody)

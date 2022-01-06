@@ -43,6 +43,7 @@ namespace VKT {
 
         if (g_InputManager->IsKeyPressed(Key::R))
         {
+            g_PhysicsManager->ClearRigidBodies();
             g_SceneManager->ReloadScene();
             return;
         }
