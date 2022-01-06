@@ -127,6 +127,9 @@ namespace VKT {
             }
         }
 
+        // Add a default white texture
+        textures["_default"] = CreateScope<Image>(1, 1);
+        textures["_default"]->m_Data = reinterpret_cast<uint8_t*>(new uint32_t(0xffffffff));
     }
 
     void AssimpParser::ProcessNode(aiNode *pNode, Ref<Scene> &scene, SceneNode *parent)

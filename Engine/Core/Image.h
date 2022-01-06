@@ -9,6 +9,7 @@ namespace VKT {
     {
     public:
         explicit Image(const std::string &path);
+        Image(uint32_t width, uint32_t height);
         Image(const Image &rhs) = delete;
         Image(Image &&rhs) noexcept;
 

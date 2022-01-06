@@ -24,6 +24,12 @@ namespace VKT {
         m_IsFloat = false;
     }
 
+    Image::Image(uint32_t width, uint32_t height)
+        : m_Width(width), m_Height(height), m_Channel(4), m_DataSize(width * height * 4), m_IsFloat(false),
+          m_Data(nullptr)
+    {
+    }
+
     Image::Image(Image &&rhs) noexcept
         : m_Width(rhs.m_Width), m_Height(rhs.m_Height), m_Channel(rhs.m_Channel), m_Data(rhs.m_Data), m_DataSize(rhs.m_DataSize), m_IsFloat(rhs.m_IsFloat)
     {

@@ -20,7 +20,7 @@ namespace VKT {
     public:
         std::unordered_map<std::string, Scope<Image>>       m_Textures;
         std::vector<Material>                               m_Materials;
-        std::vector<SceneNode>                              m_SceneNodes;
+        std::vector<SceneNode>                              m_SceneNodes;   // Usually this is one dummy root node
 
         std::vector<Rendering::Vertex>     m_Vertices;
         std::vector<uint32_t>   m_Indices;

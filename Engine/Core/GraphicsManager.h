@@ -43,7 +43,13 @@ namespace VKT {
         void InitializeGeometries();
         void PreparePipeline();
         void BuildCommandBuffers();
-        void DrawNode(VkCommandBuffer vkCommandBuffer, const SceneNode &node);
+        void DrawNode(VkCommandBuffer vkCommandBuffer, SceneNode &node);
+
+        void SetupRuntimeModelMatrixUBOMap(SceneNode &node);
+        void SetupRuntimeModelMatrixDescSetMap(SceneNode &node);
+        void WriteRuntimeModelMatrixDescSetMap(SceneNode &node);
+
+        void UpdateRuntimeNodeModelMatrix(SceneNode &node);
 
     private:
         bool BeginFrame();
@@ -78,17 +84,28 @@ namespace VKT {
 
         struct Camera
         {
-            glm::vec3 Eye = {0.0f, 10.0f, 30.0f};
-            glm::vec3 Center = {0.0f, 10.0f, 0.0f};
+            glm::vec3 Eye = {0.0f, 10.0f, 20.0f};
+            glm::vec3 Center = {0.0f, 0.0f, 0.0f};
             glm::vec3 Up = {0.0f, 1.0f, 0.0f};
         } m_Camera;
 
-        friend class InputManager;
-
         Scope<Vulkan::DescriptorSetLayout> m_MatricesDescSetLayout;
+        Scope<Vulkan::DescriptorSetLayout> m_ModelMatrixSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
 
         Scope<Vulkan::DescriptorSet> m_MatricesDescSet;
+
+        struct ModelMatrixUBO
+        {
+            Scope<Rendering::Buffer> buffer;
+            struct Values
+            {
+                alignas(16) glm::mat4 Model;
+            } values;
+        } ;
+
+        std::unordered_map<SceneNode*, ModelMatrixUBO> m_RuntimeModelMatrixUBOMap;
+        std::unordered_map<SceneNode*, Scope<Vulkan::DescriptorSet>> m_RuntimeModelMatrixDescSetMap;
 
         std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
 
@@ -97,16 +114,12 @@ namespace VKT {
             Scope<Rendering::Buffer> buffer;
             struct Values
             {
-                alignas(4) bool HasDiffMap;
-                alignas(4) bool HasSpecMap;
                 alignas(16) glm::vec4 DiffColor;
                 alignas(16) glm::vec4 SpecColor;
             } values;
         };
         std::vector<MaterialUBO> m_MaterialUniformBuffers;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
-
-        bool m_Prepared = false;
     };
 
     extern GraphicsManager *g_GraphicsManager;

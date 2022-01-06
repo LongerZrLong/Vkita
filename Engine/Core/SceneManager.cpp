@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "FileSystem.h"
-
 #include "Parser/AssimpParser.h"
 
 namespace VKT {
@@ -31,6 +29,9 @@ namespace VKT {
         if (!m_Scene)
             return -1;
 
+        m_DirtyFlag = true;
+        m_SceneFilePath = sceneFilePath;
+
         return 0;
     }
 
@@ -39,10 +40,19 @@ namespace VKT {
         return m_DirtyFlag;
     }
 
-    const Scene &SceneManager::GetScene()
+    Scene &SceneManager::GetScene()
+    {
+        return *m_Scene;
+    }
+
+    void SceneManager::NotifySceneIsRenderingQueued()
     {
         m_DirtyFlag = false;
-        return *m_Scene;
+    }
+
+    int SceneManager::ReloadScene()
+    {
+        return LoadScene(m_SceneFilePath);
     }
 
 }

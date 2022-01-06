@@ -19,13 +19,18 @@ namespace VKT {
         void Tick() override;
 
         int LoadScene(const std::string &sceneFilePath);
+        int ReloadScene();
 
         bool IsSceneChanged();
-        const Scene &GetScene();
+        Scene &GetScene();
+
+        void NotifySceneIsRenderingQueued();
 
     private:
         Ref<Scene> m_Scene;
         bool m_DirtyFlag = false;
+
+        std::string m_SceneFilePath;
 
     };
 
