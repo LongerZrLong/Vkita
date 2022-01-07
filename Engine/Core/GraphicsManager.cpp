@@ -8,7 +8,7 @@
 #include "InputManager.h"
 #include "PhysicsManager.h"
 
-#include "Application/Application.h"
+#include "Application/App.h"
 
 #include "Math/Glm.h"
 
@@ -41,28 +41,23 @@ namespace VKT {
             g_SceneManager->NotifySceneIsRenderingQueued();
         }
 
-        if (g_InputManager->IsKeyPressed(Key::R))
-        {
-            g_PhysicsManager->ClearRigidBodies();
-            g_SceneManager->ReloadScene();
-            return;
-        }
-
-        if (g_InputManager->IsKeyPressed(Key::Left) || g_InputManager->IsKeyPressed(Key::Right))
+        bool leftPressed = g_InputManager->IsKeyPressed(Key::Left);
+        bool rightPressed = g_InputManager->IsKeyPressed(Key::Right);
+        if (leftPressed || rightPressed)
         {
             auto &camera = g_GraphicsManager->m_Camera;
 
             glm::vec3 dir = camera.Eye - camera.Center;
 
-            static float speed = 0.01f;
+            static float rotSpeed = 0.01f;
 
             glm::mat4 rot(1.0f);
 
-            if (g_InputManager->IsKeyPressed(Key::Left))
-                rot = glm::rotate(rot, speed * glm::pi<float>(), camera.Up);
+            if (leftPressed)
+                rot = glm::rotate(rot, rotSpeed * glm::pi<float>(), camera.Up);
 
-            else if (g_InputManager->IsKeyPressed(Key::Right))
-                rot = glm::rotate(rot, -speed * glm::pi<float>(), camera.Up);
+            if (rightPressed)
+                rot = glm::rotate(rot, -rotSpeed * glm::pi<float>(), camera.Up);
 
             dir = glm::vec3(rot * glm::vec4(dir, 1.0f));
 

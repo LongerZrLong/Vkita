@@ -2,12 +2,12 @@
 
 #include <GLFW/glfw3.h>
 
-#include "ApplicationEvent.h"
-#include "KeyEvent.h"
-#include "MouseEvent.h"
-
 #include "Core/Assert.h"
 #include "Core/Config.h"
+
+#include "Event/ApplicationEvent.h"
+#include "Event/KeyEvent.h"
+#include "Event/MouseEvent.h"
 
 namespace VKT {
 

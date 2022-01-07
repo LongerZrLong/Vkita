@@ -6,7 +6,7 @@
 #include "InputManager.h"
 #include "GraphicsManager.h"
 
-#include "Application/Application.h"
+#include "Application/App.h"
 
 #include "Interface/IRuntimeModule.h"
 

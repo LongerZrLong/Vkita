@@ -6,7 +6,7 @@
 #include "Core/Base.h"
 #include "Core/Timestep.h"
 
-#include "Event.h"
+#include "Event/Event.h"
 
 namespace VKT {
 
@@ -21,7 +21,7 @@ namespace VKT {
         virtual void OnAttach() {}
         virtual void OnDetach() {}
 
-        virtual void OnUpdate(Timestep ts) {}
+        virtual void OnUpdate() {}
         virtual void OnEvent(Event &event) {}
 
         inline const std::string &GetName() const { return m_DebugName; }

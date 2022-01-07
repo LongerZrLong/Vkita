@@ -2,6 +2,7 @@ file(GLOB_RECURSE SRCS
         Application/*.cpp
         Core/*.cpp
         Debug/*.cpp
+        Game/*.cpp
         Input/*.cpp
         Memory/*.cpp
         Parser/*.cpp

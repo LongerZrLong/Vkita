@@ -1,21 +1,23 @@
 #pragma once
 
 // Application
-#include "Application/Application.h"
-#include "Application/ApplicationEvent.h"
-#include "Application/Event.h"
-#include "Application/KeyEvent.h"
-#include "Application/Layer.h"
-#include "Application/MouseEvent.h"
+#include "Application/App.h"
 #include "Application/Window.h"
 
-// Common
+// Core
 #include "Core/Base.h"
 #include "Core/Log.h"
 #include "Core/Timestep.h"
 
+// Event
+#include "Event/KeyEvent.h"
+#include "Event/MouseEvent.h"
+#include "Event/ApplicationEvent.h"
+
+// Game
+#include "Game/GameLogic.h"
+
 // Input
-#include "Input/Input.h"
 #include "Input/KeyCodes.h"
 #include "Input/MouseCodes.h"
 

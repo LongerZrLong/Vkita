@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Application/Application.h"
+#include "Application/App.h"
 
 namespace VKT {
 
@@ -13,7 +13,6 @@ namespace VKT {
 
     void InputManager::ShutDown()
     {
-
     }
 
     void InputManager::Tick()
