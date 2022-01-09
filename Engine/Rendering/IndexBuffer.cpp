@@ -15,7 +15,7 @@ namespace VKT::Rendering {
         const VKT::Vulkan::Device &device = g_GraphicsManager->GetContext().GetDevice();
         const VKT::Vulkan::CommandPool &commandPool = g_GraphicsManager->GetContext().GetCommandPool();
         size_t size = sizeof(indices[0]) * m_Count;
-        VKT::Vulkan::BufferUtil::CreateDeviceBuffer(device, commandPool, "indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
+        VKT::Vulkan::BufferUtil::CreateDeviceBuffer(device, commandPool, "Indices", flags, size, (void*)indices.data(), m_Buffer, m_DeviceMemory);
     }
 
     IndexBuffer::IndexBuffer(IndexBuffer &&other) noexcept

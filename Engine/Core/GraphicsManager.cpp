@@ -13,6 +13,7 @@
 #include "Math/Glm.h"
 
 #include "Vulkan/Initializers.h"
+#include "Vulkan/BufferUtil.h"
 
 namespace VKT {
 
@@ -35,7 +36,11 @@ namespace VKT {
         if (g_SceneManager->IsSceneChanged())
         {
             InitializeGeometries();
+            InitializeDebugInfo();
+
             PreparePipeline();
+            PrepareDebugPipeline();
+
             BuildCommandBuffers();
 
             g_SceneManager->NotifySceneIsRenderingQueued();
@@ -311,11 +316,12 @@ namespace VKT {
         m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
 
         // Pipeline layout
-        std::array<VkDescriptorSetLayout, 3> setLayouts = {
-            m_MatricesDescSetLayout->GetVkHandle(),
-            m_ModelMatrixSetLayout->GetVkHandle(),
-            m_MaterialDescSetLayout->GetVkHandle()
-        };
+        std::array<VkDescriptorSetLayout, 3> setLayouts =
+            {
+                m_MatricesDescSetLayout->GetVkHandle(),
+                m_ModelMatrixSetLayout->GetVkHandle(),
+                m_MaterialDescSetLayout->GetVkHandle()
+            };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
         m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
 
@@ -384,6 +390,12 @@ namespace VKT {
             vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
 
             VkDeviceSize offsets[1] = { 0 };
+
+            // Use DebugGraphicsPipeline to draw debug info
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_DebugVertBuffer->GetBuffer().GetVkHandle(), offsets);
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugGraphicsPipeline->GetVkHandle());
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
+            vkCmdDraw(vkCommandBuffer, 6, 1, 0, 0);
 
             vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_VertexBuffer->GetBuffer().GetVkHandle(), offsets);
             vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
@@ -481,5 +493,92 @@ namespace VKT {
         {
             UpdateRuntimeNodeModelMatrix(child);
         }
+    }
+
+    void GraphicsManager::InitializeDebugInfo()
+    {
+        m_DebugVertices =
+            {
+                // x axis
+                {{-1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                {{1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+
+                // y axis
+                {{0.0f, -1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+                {{0.0f, 1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+
+                // z axis
+                {{0.0f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1.0f}},
+                {{0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f}},
+            };
+
+
+        m_DebugVertBuffer = CreateScope<Rendering::Buffer>(sizeof(m_DebugVertices[0]) * m_DebugVertices.size(),
+                                                           VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        Vulkan::BufferUtil::CopyFromStagingBuffer(m_Ctx->GetDevice(),
+                                                  m_Ctx->GetCommandPool(),
+                                                  m_DebugVertBuffer->GetBuffer(),
+                                                  m_DebugVertBuffer->GetSize(),
+                                                  m_DebugVertices.data());
+    }
+
+    void GraphicsManager::PrepareDebugPipeline()
+    {
+        m_DebugVertShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.vert.spv"));
+        m_DebugFragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.frag.spv"));
+
+        // Pipeline layout
+        std::array<VkDescriptorSetLayout, 1> setLayouts =
+            {
+                m_MatricesDescSetLayout->GetVkHandle(),
+            };
+        VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
+        m_DebugPipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
+
+        // Create Graphics Pipeline
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_LINE_LIST, 0, VK_FALSE);
+        VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Vulkan::Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+        VkPipelineColorBlendAttachmentState blendAttachmentStateCI = Vulkan::Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+        VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Vulkan::Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentStateCI);
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Vulkan::Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+        VkPipelineViewportStateCreateInfo viewportStateCI = Vulkan::Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+        VkPipelineMultisampleStateCreateInfo multisampleStateCI = Vulkan::Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+        const std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipelineDynamicStateCreateInfo dynamicStateCI = Vulkan::Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
+
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages
+            {
+                m_DebugVertShader->CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
+                m_DebugFragShader->CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT)
+            };
+
+        std::vector<VkVertexInputBindingDescription> vertInputBindings =
+            {
+                VKT::Vulkan::Initializers::vertexInputBindingDescription(0, sizeof(DebugVertex), VK_VERTEX_INPUT_RATE_VERTEX)
+            };
+
+        std::vector<VkVertexInputAttributeDescription> vertInputAttribs =
+            {
+                VKT::Vulkan::Initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DebugVertex, a_Position)),
+                VKT::Vulkan::Initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DebugVertex, a_Color)),
+            };
+
+        VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertInputBindings, vertInputAttribs);
+
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_DebugPipelineLayout->GetVkHandle(), m_Ctx->renderPass->GetVkHandle(), 0);
+        pipelineCI.pVertexInputState = &vertexInputStateCI;
+        pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+        pipelineCI.pRasterizationState = &rasterizationStateCI;
+        pipelineCI.pColorBlendState = &colorBlendStateCI;
+        pipelineCI.pMultisampleState = &multisampleStateCI;
+        pipelineCI.pViewportState = &viewportStateCI;
+        pipelineCI.pDepthStencilState = &depthStencilStateCI;
+        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+        pipelineCI.pStages = shaderStages.data();
+        pipelineCI.pDynamicState = &dynamicStateCI;
+
+        m_DebugGraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
     }
 }

@@ -51,6 +51,9 @@ namespace VKT {
 
         void UpdateRuntimeNodeModelMatrix(SceneNode &node);
 
+        void InitializeDebugInfo();
+        void PrepareDebugPipeline();
+
     private:
         bool BeginFrame();
         void EndFrame();
@@ -120,6 +123,22 @@ namespace VKT {
         };
         std::vector<MaterialUBO> m_MaterialUniformBuffers;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
+
+        // TODO: This is a Debug Info Demo, remove in the future
+        struct DebugVertex
+        {
+            glm::vec3 a_Position;
+            glm::vec3 a_Color;
+        };
+
+        std::vector<DebugVertex> m_DebugVertices;
+        Scope<Rendering::Buffer> m_DebugVertBuffer;
+
+        Ref<Vulkan::PipelineLayout> m_DebugPipelineLayout;
+        Ref<Vulkan::Pipeline> m_DebugGraphicsPipeline;
+
+        Ref<Vulkan::ShaderModule> m_DebugVertShader;
+        Ref<Vulkan::ShaderModule> m_DebugFragShader;
     };
 
     extern GraphicsManager *g_GraphicsManager;

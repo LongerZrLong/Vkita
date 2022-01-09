@@ -57,7 +57,7 @@ namespace VKT::Vulkan {
         return vkGetBufferDeviceAddress(m_Device.GetVkHandle(), &info);
     }
 
-    void Buffer::CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size)
+    void Buffer::CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size) const
     {
         SingleTimeCommands::Submit(m_Device, commandPool, [&](VkCommandBuffer commandBuffer)
         {

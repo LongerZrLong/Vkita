@@ -23,7 +23,11 @@ namespace VKT::Rendering {
         bool Flush(size_t size, size_t offset);
         bool Invalidate(size_t size, size_t offset);
 
-        const VkDescriptorBufferInfo &GetDescriptor() { return m_Descriptor; }
+        const VKT::Vulkan::Buffer &GetBuffer() const { return *m_Buffer; }
+        const VKT::Vulkan::DeviceMemory &GetDeviceMemory() const { return *m_DeviceMemory; }
+        const VkDescriptorBufferInfo &GetDescriptor() const { return m_Descriptor; }
+
+        size_t GetSize() const { return m_Size; }
 
     private:
         Scope<VKT::Vulkan::Buffer> m_Buffer;

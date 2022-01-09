@@ -5,7 +5,7 @@ namespace VKT::Vulkan {
     void BufferUtil::CopyFromStagingBuffer(
         const Device &device,
         const CommandPool &commandPool,
-        Buffer &dstBuffer,
+        const Buffer &dstBuffer,
         size_t size,
         void *data)
     {

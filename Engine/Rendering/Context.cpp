@@ -71,6 +71,9 @@ namespace VKT::Rendering {
         deviceFeatures.samplerAnisotropy = VK_TRUE;
         deviceFeatures.sampleRateShading = VK_TRUE;
 
+        // If the non-solid fill modes feature is not enabled, polygonMode must be VK_POLYGON_MODE_FILL
+        deviceFeatures.fillModeNonSolid = VK_TRUE;
+
         device = CreateScope<Vulkan::Device>(physicalDevice, *surface, requiredExtensions, deviceFeatures, nullptr);
         cmdPool = CreateScope<Vulkan::CommandPool>(*device, device->GetGraphicsFamilyIndex(), true);
     }
@@ -78,12 +81,8 @@ namespace VKT::Rendering {
     void Context::CreateDevice()
     {
         const auto &physicalDevices = GetPhysicalDevices();
-        const auto result = std::find_if(physicalDevices.begin(), physicalDevices.end(), [](const VkPhysicalDevice& device)
+        const auto result = std::find_if(physicalDevices.begin(), physicalDevices.end(), [](const VkPhysicalDevice &device)
         {
-            // We want a device with geometry shader support.
-            VkPhysicalDeviceFeatures deviceFeatures;
-            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
             // We want a device with a graphics queue.
             const auto queueFamilies = Vulkan::GetEnumerateVector(device, vkGetPhysicalDeviceQueueFamilyProperties);
             const auto hasGraphicsQueue = std::find_if(queueFamilies.begin(), queueFamilies.end(), [](const VkQueueFamilyProperties& queueFamily)
@@ -202,9 +201,6 @@ namespace VKT::Rendering {
             deviceProp.pNext = &driverProp;
 
             vkGetPhysicalDeviceProperties2(device, &deviceProp);
-
-            VkPhysicalDeviceFeatures features;
-            vkGetPhysicalDeviceFeatures(device, &features);
 
             const auto& prop = deviceProp.properties;
 

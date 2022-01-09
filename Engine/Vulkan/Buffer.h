@@ -21,7 +21,7 @@ namespace VKT::Vulkan {
         VkMemoryRequirements GetVkMemoryRequirements() const;
         VkDeviceAddress GetVkDeviceAddress() const;
 
-        void CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size);
+        void CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size) const;
 
     private:
         VULKAN_HANDLE(VkBuffer, m_VkBuffer);

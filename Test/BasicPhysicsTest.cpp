@@ -27,11 +27,14 @@ namespace VKT {
                 {
                     auto &scene = g_SceneManager->GetScene();
 
-                    // Plane
+                    // Sphere
                     scene.m_SceneNodes[0].m_Children[0].m_CollisionType = CollisionType::Sphere;
 
-                    // Sphere
+                    // Plane
                     scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
+
+                    // Move the plane up a little
+                    scene.m_SceneNodes[0].m_Children[1].m_Transform.SetPosition({0.0f, 0.0f, 0.0f});
 
                     // Sphere
                     scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
