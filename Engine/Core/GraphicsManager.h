@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "Core/Base.h"
+#include "Core/DebugManager.h"
 
 #include "Interface/IRuntimeModule.h"
 
@@ -53,6 +54,7 @@ namespace VKT {
 
         void InitializeDebugInfo();
         void PrepareDebugPipeline();
+        void DrawNodeDebugInfo(VkCommandBuffer vkCommandBuffer, SceneNode &node);
 
     private:
         bool BeginFrame();
@@ -124,15 +126,17 @@ namespace VKT {
         std::vector<MaterialUBO> m_MaterialUniformBuffers;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
 
-        // TODO: This is a Debug Info Demo, remove in the future
-        struct DebugVertex
+        // Debug Info
+        struct DebugPrimitive
         {
-            glm::vec3 a_Position;
-            glm::vec3 a_Color;
+            size_t FirstIndex;
+            size_t IndexCount;
         };
 
-        std::vector<DebugVertex> m_DebugVertices;
-        Scope<Rendering::Buffer> m_DebugVertBuffer;
+        std::unordered_map<SceneNode*, DebugPrimitive> m_DebugPrimitivesMap;
+
+        Ref<Rendering::Buffer> m_DebugVertBuffer;
+        Ref<Rendering::Buffer> m_DebugIndexBuffer;
 
         Ref<Vulkan::PipelineLayout> m_DebugPipelineLayout;
         Ref<Vulkan::Pipeline> m_DebugGraphicsPipeline;

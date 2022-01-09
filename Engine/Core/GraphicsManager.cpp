@@ -35,15 +35,24 @@ namespace VKT {
     {
         if (g_SceneManager->IsSceneChanged())
         {
+            m_Ctx->device->WaitIdle();
             InitializeGeometries();
-            InitializeDebugInfo();
-
             PreparePipeline();
-            PrepareDebugPipeline();
 
             BuildCommandBuffers();
 
             g_SceneManager->NotifySceneIsRenderingQueued();
+        }
+
+        if (g_DebugManager->IsDebugInfoChanged())
+        {
+            m_Ctx->device->WaitIdle();
+            InitializeDebugInfo();
+            PrepareDebugPipeline();
+
+            BuildCommandBuffers();
+
+            g_DebugManager->NotifySceneIsRenderingQueued();
         }
 
         bool leftPressed = g_InputManager->IsKeyPressed(Key::Left);
@@ -391,12 +400,6 @@ namespace VKT {
 
             VkDeviceSize offsets[1] = { 0 };
 
-            // Use DebugGraphicsPipeline to draw debug info
-            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_DebugVertBuffer->GetBuffer().GetVkHandle(), offsets);
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugGraphicsPipeline->GetVkHandle());
-            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
-            vkCmdDraw(vkCommandBuffer, 6, 1, 0, 0);
-
             vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_VertexBuffer->GetBuffer().GetVkHandle(), offsets);
             vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
@@ -404,6 +407,19 @@ namespace VKT {
 
             for (auto &node : scene.m_SceneNodes)
                 DrawNode(vkCommandBuffer, node);
+
+            // If there is no debug info
+            if (!m_DebugPrimitivesMap.empty() && g_DebugManager->IsDrawDebugInfo())
+            {
+                // Use DebugGraphicsPipeline to draw debug info
+                vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_DebugVertBuffer->GetBuffer().GetVkHandle(), offsets);
+                vkCmdBindIndexBuffer(vkCommandBuffer, m_DebugIndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugGraphicsPipeline->GetVkHandle());
+                vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
+
+                for (auto &node : scene.m_SceneNodes)
+                    DrawNodeDebugInfo(vkCommandBuffer, node);
+            }
 
             vkCmdEndRenderPass(vkCommandBuffer);
 
@@ -432,6 +448,7 @@ namespace VKT {
                 }
             }
         }
+
         for (auto &child : node.m_Children)
         {
             DrawNode(vkCommandBuffer, child);
@@ -497,23 +514,36 @@ namespace VKT {
 
     void GraphicsManager::InitializeDebugInfo()
     {
-        m_DebugVertices =
+        std::vector<DebugVertex> debugVertices;
+        std::vector<uint32_t> debugIndices;
+
+        for (auto &it : g_DebugManager->GetVerticesMap())
+        {
+            for (auto &vertex : it.second)
             {
-                // x axis
-                {{-1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-                {{1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                debugVertices.push_back(vertex);
+            }
+        }
 
-                // y axis
-                {{0.0f, -1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-                {{0.0f, 1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+        for (auto &it : g_DebugManager->GetIndicesMap())
+        {
+            size_t curSize = debugIndices.size();
+            size_t indicesCount = 0;
+            for (auto &index : it.second)
+            {
+                debugIndices.push_back(index);
+                indicesCount++;
+            }
 
-                // z axis
-                {{0.0f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1.0f}},
-                {{0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f}},
-            };
+            m_DebugPrimitivesMap[it.first].FirstIndex = curSize;
+            m_DebugPrimitivesMap[it.first].IndexCount = indicesCount;
+        }
 
+        // If there is no debug info, return immediately
+        if (m_DebugPrimitivesMap.empty()) return;
 
-        m_DebugVertBuffer = CreateScope<Rendering::Buffer>(sizeof(m_DebugVertices[0]) * m_DebugVertices.size(),
+        // Create Vertex Buffer for Debug Info
+        m_DebugVertBuffer = CreateRef<Rendering::Buffer>(sizeof(debugVertices[0]) * debugVertices.size(),
                                                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -521,7 +551,18 @@ namespace VKT {
                                                   m_Ctx->GetCommandPool(),
                                                   m_DebugVertBuffer->GetBuffer(),
                                                   m_DebugVertBuffer->GetSize(),
-                                                  m_DebugVertices.data());
+                                                  debugVertices.data());
+
+        // Create Index Buffer for Debug Info
+        m_DebugIndexBuffer = CreateRef<Rendering::Buffer>(sizeof(debugIndices[0]) * debugIndices.size(),
+                                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        Vulkan::BufferUtil::CopyFromStagingBuffer(m_Ctx->GetDevice(),
+                                                  m_Ctx->GetCommandPool(),
+                                                  m_DebugIndexBuffer->GetBuffer(),
+                                                  m_DebugIndexBuffer->GetSize(),
+                                                  debugIndices.data());
     }
 
     void GraphicsManager::PrepareDebugPipeline()
@@ -530,9 +571,10 @@ namespace VKT {
         m_DebugFragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.frag.spv"));
 
         // Pipeline layout
-        std::array<VkDescriptorSetLayout, 1> setLayouts =
+        std::array<VkDescriptorSetLayout, 2> setLayouts =
             {
                 m_MatricesDescSetLayout->GetVkHandle(),
+                m_ModelMatrixSetLayout->GetVkHandle(),
             };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
         m_DebugPipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
@@ -580,5 +622,24 @@ namespace VKT {
         pipelineCI.pDynamicState = &dynamicStateCI;
 
         m_DebugGraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
+    }
+
+    void GraphicsManager::DrawNodeDebugInfo(VkCommandBuffer vkCommandBuffer, SceneNode &node)
+    {
+        if (m_DebugPrimitivesMap.count(&node) > 0)
+        {
+            vkCmdBindDescriptorSets(vkCommandBuffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_DebugPipelineLayout->GetVkHandle(),
+                                    1, 1,
+                                    &m_RuntimeModelMatrixDescSetMap[&node]->GetVkHandle(), 0, nullptr);
+
+            vkCmdDrawIndexed(vkCommandBuffer, m_DebugPrimitivesMap[&node].IndexCount, 1, m_DebugPrimitivesMap[&node].FirstIndex, 0, 0);
+        }
+
+        for (auto &child : node.m_Children)
+        {
+            DrawNodeDebugInfo(vkCommandBuffer, child);
+        }
     }
 }

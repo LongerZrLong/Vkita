@@ -30,34 +30,10 @@ namespace VKT {
         void *m_RigidBody = nullptr;
 
     public:
-        glm::mat4 GetLocalToWorldMatrix() const
-        {
-            Transform result;
+        glm::mat4 GetLocalToWorldMatrix() const;
 
-            auto matrix = glm::identity<glm::mat4>();
+        void LinkRigidBody(void *rigidBody);
+        void *UnlinkRigidBody();
 
-            const SceneNode *ptr = this;
-
-            while (ptr)
-            {
-                matrix = ptr->m_Transform.GetMatrix() * matrix;
-                ptr = ptr->m_Parent;
-            }
-
-            return matrix;
-        }
-
-        void LinkRigidBody(void *rigidBody)
-        {
-            m_RigidBody = rigidBody;
-        }
-
-        void *UnlinkRigidBody()
-        {
-            void *rigidBody = m_RigidBody;
-            m_RigidBody = nullptr;
-
-            return rigidBody;
-        }
     };
 }

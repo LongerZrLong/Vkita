@@ -23,9 +23,6 @@ namespace VKT {
         bool IsKeyPressed(KeyCode key);
         bool IsMouseButtonPressed(MouseCode button);
 
-        bool IsKeyRelease(KeyCode key);
-        bool IsMouseButtonRelease(MouseCode button);
-
         glm::vec2 GetMousePosition();
 
     };

@@ -5,6 +5,7 @@
 #include <Core/GraphicsManager.h>
 #include <Core/InputManager.h>
 #include <Core/PhysicsManager.h>
+#include <Core/DebugManager.h>
 
 namespace VKT {
 
@@ -16,8 +17,35 @@ namespace VKT {
         {
             g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/nanosuit/nanosuit.obj"));
 
+            SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes[0];
+
+            // x axis
+            g_DebugManager->AddLine(rootNode, {-1000.f, 0.0f, 0.0f}, {1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
+
+            // y axis
+            g_DebugManager->AddLine(rootNode, {0.f, -1000.0f, 0.0f}, {0.0f, 1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+
+            // z axis
+            g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
+
             return 0;
         }
+
+        void Tick()
+        {
+            if (g_InputManager->IsKeyPressed(Key::D))
+            {
+                m_DebugKeyPressed = true;
+            }
+
+            if (!g_InputManager->IsKeyPressed(Key::D) && m_DebugKeyPressed)
+            {
+                g_DebugManager->ToggleDebugInfo();
+                m_DebugKeyPressed = false;
+            }
+        }
+
+        bool m_DebugKeyPressed = false;
     };
 }
 
@@ -30,6 +58,7 @@ namespace VKT {
     GraphicsManager *g_GraphicsManager = new GraphicsManager();
     PhysicsManager  *g_PhysicsManager = new PhysicsManager();
     GameLogic       *g_GameLogic = new SceneRenderTestGameLogic();
+    DebugManager    *g_DebugManager = new DebugManager();
 }
 
 using namespace VKT;
@@ -43,6 +72,7 @@ int main()
     g_PhysicsManager->Initialize();
     g_GraphicsManager->Initialize();
     g_GameLogic->Initialize();
+    g_DebugManager->Initialize();
 
     while (g_App->IsRunning())
     {
@@ -53,9 +83,11 @@ int main()
         g_PhysicsManager->Initialize();
         g_GraphicsManager->Tick();
         g_GameLogic->Tick();
+        g_DebugManager->Tick();
     }
 
-    g_GameLogic->Tick();
+    g_DebugManager->ShutDown();
+    g_GameLogic->ShutDown();
     g_GraphicsManager->ShutDown();
     g_PhysicsManager->Initialize();
     g_InputManager->ShutDown();
