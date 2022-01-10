@@ -16,10 +16,14 @@ namespace VKT {
     public:
         std::string m_Name;
 
-        glm::vec4 m_DiffuseColor = glm::vec4(1.0f);
-        glm::vec4 m_SpecularColor = glm::vec4(1.0f);
+        struct Parameter
+        {
+            alignas(16) glm::vec4 DiffuseColor = glm::vec4(1.0f);
+            alignas(16) glm::vec4 SpecularColor = glm::vec4(1.0f);
 
-        float m_Shininess = 32.0f;
+            alignas(4) float Shininess = 32.0f;
+
+        } m_Parameter;
 
         std::string m_DiffuseTextureName;
         std::string m_SpecularTextureName;

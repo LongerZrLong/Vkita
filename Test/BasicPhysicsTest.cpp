@@ -15,7 +15,37 @@ namespace VKT {
         void OnAttach()
         {
             g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/basic_physics/basic_physics.gltf"));
-            AddDebugInfo();
+
+            // Manually set rigid bodies
+            {
+                auto &scene = g_SceneManager->GetScene();
+
+                // Sphere
+                scene.m_SceneNodes[0].m_Children[0].m_CollisionType = CollisionType::Sphere;
+
+                // Plane
+                scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
+
+                // Move the plane up a little
+                scene.m_SceneNodes[0].m_Children[1].m_Transform.SetPosition({0.0f, 0.0f, 0.0f});
+
+                // Sphere
+                scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
+            }
+
+            // Manually set debug info
+            {
+                SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes[0];
+
+                // x axis
+                g_DebugManager->AddLine(rootNode, {-1000.f, 0.0f, 0.0f}, {1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
+
+                // y axis
+                g_DebugManager->AddLine(rootNode, {0.f, -1000.0f, 0.0f}, {0.0f, 1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+
+                // z axis
+                g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
+            }
         }
 
         void OnUpdate()
@@ -27,29 +57,7 @@ namespace VKT {
 
             if (!g_InputManager->IsKeyPressed(Key::R) && m_ResetKeyPressed)
             {
-                g_PhysicsManager->ClearRigidBodies();
-
-                // TODO: Temporarily use reload scene. Implement reset scene in graphics manager in the future
-                g_SceneManager->ReloadScene();
-
-                // Manually set rigid bodies
-                {
-                    auto &scene = g_SceneManager->GetScene();
-
-                    // Sphere
-                    scene.m_SceneNodes[0].m_Children[0].m_CollisionType = CollisionType::Sphere;
-
-                    // Plane
-                    scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
-
-                    // Move the plane up a little
-                    scene.m_SceneNodes[0].m_Children[1].m_Transform.SetPosition({0.0f, 0.0f, 0.0f});
-
-                    // Sphere
-                    scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
-                }
-
-                AddDebugInfo();
+                g_GraphicsManager->ResetScene();
 
                 m_ResetKeyPressed = false;
             }
@@ -67,21 +75,6 @@ namespace VKT {
         }
 
     private:
-        void AddDebugInfo()
-        {
-            // Manually set debug info
-            SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes[0];
-
-            // x axis
-            g_DebugManager->AddLine(rootNode, {-1000.f, 0.0f, 0.0f}, {1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
-
-            // y axis
-            g_DebugManager->AddLine(rootNode, {0.f, -1000.0f, 0.0f}, {0.0f, 1000.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-
-            // z axis
-            g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
-        }
-
         bool m_ResetKeyPressed = false;
         bool m_DebugKeyPressed = false;
     };

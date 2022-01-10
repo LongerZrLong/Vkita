@@ -1,15 +1,15 @@
 #version 450
 
-layout (set = 0, binding = 0) uniform UniformBufferObject
+layout (set = 0, binding = 0) uniform PerFrame
 {
     mat4 View;
     mat4 Proj;
-} shaderData;
+} perFrame;
 
-layout (set = 1, binding = 0) uniform ModelMatrixUBO
+layout (set = 1, binding = 0) uniform PerBatch
 {
     mat4 Model;
-} primitive;
+} perBatch;
 
 layout (location = 0) in vec3 a_Position;
 layout (location = 1) in vec3 a_Color;
@@ -18,6 +18,6 @@ layout (location = 0) out vec3 v_Color;
 
 void main()
 {
-    gl_Position = shaderData.Proj * shaderData.View * primitive.Model * vec4(a_Position, 1.0);
+    gl_Position = perFrame.Proj * perFrame.View * perBatch.Model * vec4(a_Position, 1.0);
     v_Color = a_Color;
 }

@@ -7,6 +7,7 @@
 #include "SceneManager.h"
 #include "InputManager.h"
 #include "PhysicsManager.h"
+#include "DebugManager.h"
 
 #include "Application/App.h"
 
@@ -78,9 +79,9 @@ namespace VKT {
             camera.Eye = camera.Center + dir;
         }
 
-        // Update Shader Data
-        m_ShaderData.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
-        m_ShaderData.buffer->Update(&m_ShaderData.values);
+        // Update PerFrame Data
+        m_PerFrame.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
+        m_PerFrame.buffer->Update(&m_PerFrame.values);
 
         // Update model matrix for each scene node
         auto &scene = g_SceneManager->GetScene();
@@ -182,7 +183,7 @@ namespace VKT {
         m_VertexBuffer = CreateRef<Rendering::VertexBuffer>(scene.m_Vertices);
         m_IndexBuffer = CreateRef<Rendering::IndexBuffer>(scene.m_Indices);
 
-        m_ShaderData.buffer = CreateScope<Rendering::Buffer>(sizeof(m_ShaderData.values),
+        m_PerFrame.buffer = CreateScope<Rendering::Buffer>(sizeof(m_PerFrame.values),
                                                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -200,35 +201,34 @@ namespace VKT {
         m_MaterialUniformBuffers.resize(scene.m_Materials.size());
         for (size_t i = 0; i < scene.m_Materials.size(); i++)
         {
-            m_MaterialUniformBuffers[i].buffer = CreateScope<Rendering::Buffer>(sizeof(MaterialUBO),
-                                                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            m_MaterialUniformBuffers[i] = CreateScope<Rendering::Buffer>(
+                sizeof(Material::Parameter),
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-            m_MaterialUniformBuffers[i].values.DiffColor = scene.m_Materials[i].m_DiffuseColor;
-            m_MaterialUniformBuffers[i].values.SpecColor = scene.m_Materials[i].m_SpecularColor;
-
-            m_MaterialUniformBuffers[i].buffer->Update(&m_MaterialUniformBuffers[i].values);
+            m_MaterialUniformBuffers[i]->Update(&scene.m_Materials[i].m_Parameter);
         }
 
         // Temporary set projection, view matrix here
-        m_ShaderData.values.Proj = glm::perspective(glm::radians(45.0f), g_App->GetWindow().GetWidth() / (float) g_App->GetWindow().GetHeight(), 0.1f, 1000.0f);
-        m_ShaderData.values.Proj[1][1] *= -1;
+        m_PerFrame.values.Proj = glm::perspective(glm::radians(45.0f), g_App->GetWindow().GetWidth() / (float) g_App->GetWindow().GetHeight(), 0.1f, 1000.0f);
+        m_PerFrame.values.Proj[1][1] *= -1;
 
-        m_ShaderData.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
+        m_PerFrame.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
 
-        m_ShaderData.buffer->Update(&m_ShaderData.values);
+        m_PerFrame.buffer->Update(&m_PerFrame.values);
 
         // Set up descriptors
         // One uniform buffer for view and projection matrix
         // One uniform buffer for each scene node's model matrix
         // One uniform buffer for each material
         // Two combined image samplers (diffuse + specular) for each material
-        std::vector<VkDescriptorPoolSize> poolSizes = {
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_RuntimeModelMatrixUBOMap.size()),
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, scene.m_Materials.size()),
-            Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * scene.m_Materials.size())
-        };
+        std::vector<VkDescriptorPoolSize> poolSizes =
+            {
+                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
+                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_RuntimeModelMatrixUBOMap.size()),
+                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, scene.m_Materials.size()),
+                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * scene.m_Materials.size())
+            };
 
         const uint32_t maxSetCount = 1 + m_RuntimeModelMatrixUBOMap.size() + scene.m_Materials.size();
         VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
@@ -236,27 +236,27 @@ namespace VKT {
 
         // Descriptor set layout for shader data matrices (View + Proj matrices)
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
-        {
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
-        };
+            {
+                Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+            };
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
         m_MatricesDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor set layout for model matrix
         setLayoutBindings =
-        {
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
-        };
+            {
+                Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+            };
         descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
         m_ModelMatrixSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor Set layout for each material
         setLayoutBindings =
-        {
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
-            Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2),
-        };
+            {
+                Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
+                Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
+                Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2),
+            };
         descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
         m_MaterialDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
@@ -279,7 +279,7 @@ namespace VKT {
         }
 
         // Write Descriptor Set for shader data matrices
-        VkDescriptorBufferInfo bufferInfo = m_ShaderData.buffer->GetDescriptor();
+        VkDescriptorBufferInfo bufferInfo = m_PerFrame.buffer->GetDescriptor();
         m_MatricesDescSet->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
 
         // Write Descriptor Set for each scene node model matrix
@@ -291,7 +291,7 @@ namespace VKT {
         // Write Descriptor Set for each material
         for (size_t i = 0; i < m_MaterialDescSets.size(); i++)
         {
-            VkDescriptorBufferInfo uboInfo = m_MaterialUniformBuffers[i].buffer->GetDescriptor();
+            VkDescriptorBufferInfo uboInfo = m_MaterialUniformBuffers[i]->GetDescriptor();
             m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uboInfo);
 
             if (!scene.m_Materials[i].m_DiffuseTextureName.empty())
@@ -457,12 +457,10 @@ namespace VKT {
 
     void GraphicsManager::SetupRuntimeModelMatrixUBOMap(SceneNode &node)
     {
-        m_RuntimeModelMatrixUBOMap[&node].buffer = CreateScope<Rendering::Buffer>(
-            sizeof(ModelMatrixUBO::values),
+        m_RuntimeModelMatrixUBOMap[&node] = CreateScope<Rendering::Buffer>(
+            sizeof(glm::mat4),
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-        m_RuntimeModelMatrixUBOMap[&node].values.Model = node.GetLocalToWorldMatrix();
 
         for (auto &child : node.m_Children)
         {
@@ -484,7 +482,7 @@ namespace VKT {
     void GraphicsManager::WriteRuntimeModelMatrixDescSetMap(SceneNode &node)
     {
         // Write Descriptor Set for model matrix
-        auto bufferInfo = m_RuntimeModelMatrixUBOMap[&node].buffer->GetDescriptor();
+        auto bufferInfo = m_RuntimeModelMatrixUBOMap[&node]->GetDescriptor();
         m_RuntimeModelMatrixDescSetMap[&node]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
 
         for (auto &child : node.m_Children)
@@ -495,20 +493,47 @@ namespace VKT {
 
     void GraphicsManager::UpdateRuntimeNodeModelMatrix(SceneNode &node)
     {
+        glm::mat4 modelMatrix;
+
         if (void *rigidBody = node.m_RigidBody)
         {
-            m_RuntimeModelMatrixUBOMap[&node].values.Model = g_PhysicsManager->GetRigidBodyTransform(rigidBody);
+            modelMatrix = g_PhysicsManager->GetRigidBodyTransform(rigidBody);
         }
         else
         {
-            m_RuntimeModelMatrixUBOMap[&node].values.Model = node.GetLocalToWorldMatrix();
+            modelMatrix = node.GetLocalToWorldMatrix();
         }
 
-        m_RuntimeModelMatrixUBOMap[&node].buffer->Update(&m_RuntimeModelMatrixUBOMap[&node].values.Model);
+        m_RuntimeModelMatrixUBOMap[&node]->Update(&modelMatrix);
 
         for (auto &child : node.m_Children)
         {
             UpdateRuntimeNodeModelMatrix(child);
+        }
+    }
+
+    void GraphicsManager::ResetScene()
+    {
+        auto &scene = g_SceneManager->GetScene();
+
+        for (auto &node : scene.m_SceneNodes)
+        {
+            ResetRuntimeNodeModelMatrix(node);
+        }
+
+        g_PhysicsManager->ClearRigidBodies();
+        g_PhysicsManager->CreateRigidBodies();
+    }
+
+    void GraphicsManager::ResetRuntimeNodeModelMatrix(SceneNode &node)
+    {
+        glm::mat4 modelMatrix = node.GetLocalToWorldMatrix();
+
+        m_RuntimeModelMatrixUBOMap[&node]->Update(&modelMatrix);
+
+        for (auto &child : node.m_Children)
+        {
+            ResetRuntimeNodeModelMatrix(child);
         }
     }
 

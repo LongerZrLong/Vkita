@@ -30,7 +30,6 @@ namespace VKT {
             return -1;
 
         m_DirtyFlag = true;
-        m_SceneFilePath = sceneFilePath;
 
         return 0;
     }
@@ -48,11 +47,6 @@ namespace VKT {
     void SceneManager::NotifySceneIsRenderingQueued()
     {
         m_DirtyFlag = false;
-    }
-
-    int SceneManager::ReloadScene()
-    {
-        return LoadScene(m_SceneFilePath);
     }
 
 }

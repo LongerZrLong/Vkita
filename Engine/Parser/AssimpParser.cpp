@@ -89,10 +89,10 @@ namespace VKT {
                 Material &sceneMat = scene->m_Materials[i];
                 sceneMat.m_Name = name.C_Str();
 
-                sceneMat.m_DiffuseColor = glm::vec4(diffuseFactor.r, diffuseFactor.g, diffuseFactor.b, 1.0f);
-                sceneMat.m_SpecularColor = glm::vec4(specularFactor.r, specularFactor.g, specularFactor.b, 1.0f);
+                sceneMat.m_Parameter.DiffuseColor = glm::vec4(diffuseFactor.r, diffuseFactor.g, diffuseFactor.b, 1.0f);
+                sceneMat.m_Parameter.SpecularColor = glm::vec4(specularFactor.r, specularFactor.g, specularFactor.b, 1.0f);
 
-                sceneMat.m_Shininess = shininess;
+                sceneMat.m_Parameter.Shininess = shininess;
 
                 sceneMat.m_DiffuseTextureName = diffTexName.C_Str();
                 sceneMat.m_SpecularTextureName = specularTexName.C_Str();

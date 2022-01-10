@@ -6,7 +6,6 @@
 #include <vulkan/vulkan.h>
 
 #include "Core/Base.h"
-#include "Core/DebugManager.h"
 
 #include "Interface/IRuntimeModule.h"
 
@@ -38,6 +37,8 @@ namespace VKT {
 
         void Tick() override;
 
+        void ResetScene();
+
         const Rendering::Context &GetContext() const { return *m_Ctx; }
 
     private:
@@ -51,6 +52,7 @@ namespace VKT {
         void WriteRuntimeModelMatrixDescSetMap(SceneNode &node);
 
         void UpdateRuntimeNodeModelMatrix(SceneNode &node);
+        void ResetRuntimeNodeModelMatrix(SceneNode &node);
 
         void InitializeDebugInfo();
         void PrepareDebugPipeline();
@@ -65,7 +67,6 @@ namespace VKT {
     private:
         Scope<Rendering::Context> m_Ctx;
 
-        // TODO: Delete Testing Code
         Ref<Vulkan::DescriptorPool> m_DescriptorPool;
 
         Ref<Vulkan::PipelineLayout> m_PipelineLayout;
@@ -77,7 +78,7 @@ namespace VKT {
         Ref<Rendering::VertexBuffer> m_VertexBuffer;
         Ref<Rendering::IndexBuffer> m_IndexBuffer;
 
-        struct ShaderData
+        struct PerFrame
         {
             Scope<Rendering::Buffer> buffer;
             struct Values
@@ -85,7 +86,7 @@ namespace VKT {
                 alignas(16) glm::mat4 View;
                 alignas(16) glm::mat4 Proj;
             } values;
-        } m_ShaderData;
+        } m_PerFrame;
 
         struct Camera
         {
@@ -100,30 +101,11 @@ namespace VKT {
 
         Scope<Vulkan::DescriptorSet> m_MatricesDescSet;
 
-        struct ModelMatrixUBO
-        {
-            Scope<Rendering::Buffer> buffer;
-            struct Values
-            {
-                alignas(16) glm::mat4 Model;
-            } values;
-        } ;
-
-        std::unordered_map<SceneNode*, ModelMatrixUBO> m_RuntimeModelMatrixUBOMap;
+        std::unordered_map<SceneNode*, Scope<Rendering::Buffer>> m_RuntimeModelMatrixUBOMap;
         std::unordered_map<SceneNode*, Scope<Vulkan::DescriptorSet>> m_RuntimeModelMatrixDescSetMap;
 
         std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
-
-        struct MaterialUBO
-        {
-            Scope<Rendering::Buffer> buffer;
-            struct Values
-            {
-                alignas(16) glm::vec4 DiffColor;
-                alignas(16) glm::vec4 SpecColor;
-            } values;
-        };
-        std::vector<MaterialUBO> m_MaterialUniformBuffers;
+        std::vector<Scope<Rendering::Buffer>> m_MaterialUniformBuffers;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
 
         // Debug Info
@@ -132,7 +114,6 @@ namespace VKT {
             size_t FirstIndex;
             size_t IndexCount;
         };
-
         std::unordered_map<SceneNode*, DebugPrimitive> m_DebugPrimitivesMap;
 
         Ref<Rendering::Buffer> m_DebugVertBuffer;

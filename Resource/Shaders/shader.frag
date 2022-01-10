@@ -1,10 +1,11 @@
 #version 450
 
-layout (set = 2, binding = 0) uniform MaterialUBO
+layout (set = 2, binding = 0) uniform Parameter
 {
     vec4 DiffColor;
     vec4 SpecColor;
-} materialData;
+    float Shininess;
+} parameter;
 
 layout (set = 2, binding = 1) uniform sampler2D diffSampler;
 layout (set = 2, binding = 2) uniform sampler2D specSampler;
@@ -24,6 +25,5 @@ void main()
 
     float cosine = dot(-normalize(directionalLightDir), v_Normal);
 
-    color = (ambientLightIntensity + directionalLightIntensity * cosine) * texture(diffSampler, v_TexCoord) * materialData.DiffColor;
-//    color = vec4(0.2, 0.3, 0.8, 1.0);
+    color = (ambientLightIntensity + directionalLightIntensity * cosine) * texture(diffSampler, v_TexCoord) * parameter.DiffColor;
 }

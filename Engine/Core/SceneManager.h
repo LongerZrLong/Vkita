@@ -19,7 +19,6 @@ namespace VKT {
         void Tick() override;
 
         int LoadScene(const std::string &sceneFilePath);
-        int ReloadScene();
 
         bool IsSceneChanged();
         Scene &GetScene();
@@ -29,8 +28,6 @@ namespace VKT {
     private:
         Ref<Scene> m_Scene;
         bool m_DirtyFlag = false;
-
-        std::string m_SceneFilePath;
 
     };
 
