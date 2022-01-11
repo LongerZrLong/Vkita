@@ -26,9 +26,6 @@ namespace VKT {
                 // Plane
                 scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
 
-                // Move the plane up a little
-                scene.m_SceneNodes[0].m_Children[1].m_Transform.SetPosition({0.0f, 0.0f, 0.0f});
-
                 // Sphere
                 scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
             }
@@ -45,6 +42,13 @@ namespace VKT {
 
                 // z axis
                 g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
+
+                // a bounding box for each sphere
+                SceneNode &sphereNode1 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[0];
+                g_DebugManager->AddBox(sphereNode1, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
+
+                SceneNode &sphereNode2 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[2];
+                g_DebugManager->AddBox(sphereNode2, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
             }
         }
 

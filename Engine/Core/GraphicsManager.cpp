@@ -541,22 +541,26 @@ namespace VKT {
     {
         std::vector<DebugVertex> debugVertices;
         std::vector<uint32_t> debugIndices;
+        std::unordered_map<SceneNode*, size_t> firstVertexInVertexArray;
 
         for (auto &it : g_DebugManager->GetVerticesMap())
         {
+            size_t curSize = debugVertices.size();
             for (auto &vertex : it.second)
             {
                 debugVertices.push_back(vertex);
             }
+            firstVertexInVertexArray[it.first] = curSize;
         }
 
         for (auto &it : g_DebugManager->GetIndicesMap())
         {
             size_t curSize = debugIndices.size();
+            size_t vertexStart = firstVertexInVertexArray[it.first];
             size_t indicesCount = 0;
             for (auto &index : it.second)
             {
-                debugIndices.push_back(index);
+                debugIndices.push_back(vertexStart + index);
                 indicesCount++;
             }
 

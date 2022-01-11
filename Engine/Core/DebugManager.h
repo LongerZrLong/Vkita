@@ -29,6 +29,7 @@ namespace VKT {
         const auto &GetIndicesMap() const { return m_IndicesMap; }
 
         void AddLine(SceneNode &node, const glm::vec3 &from, const glm::vec3 &to, const glm::vec3 &color);
+        void AddBox(SceneNode &node, const glm::vec3 &boxMin, const glm::vec3 &boxMax, const glm::vec3 &color);
 
     private:
         bool m_DrawDebugInfo = false;
