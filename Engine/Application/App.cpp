@@ -23,10 +23,6 @@ namespace VKT {
 
     void App::Tick()
     {
-        if (!m_Minimized)
-        {
-            g_GameLogic->OnUpdate();
-        }
     }
 
     void App::OnEvent(Event &event)

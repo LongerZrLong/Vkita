@@ -11,7 +11,7 @@ namespace VKT {
     public:
         int Initialize() override { return 0; }
         void ShutDown() override {}
-        void Tick() override {}
+        void Tick() override { OnUpdate(); }
 
         void OnUpdate();
         void OnEvent(Event &event);

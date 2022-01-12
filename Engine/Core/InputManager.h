@@ -9,6 +9,11 @@
 
 namespace VKT {
 
+    enum class CursorMode
+    {
+        Normal = 0, Hidden, Locked
+    };
+
     class InputManager : public IRuntimeModule
     {
     public:
@@ -21,9 +26,12 @@ namespace VKT {
         void Tick() override;
 
         bool IsKeyPressed(KeyCode key);
-        bool IsMouseButtonPressed(MouseCode button);
 
+        bool IsMouseButtonPressed(MouseCode button);
         glm::vec2 GetMousePosition();
+
+        void SetCursorMode(CursorMode mode);
+        CursorMode GetCursorMode();
 
     };
 

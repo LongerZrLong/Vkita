@@ -42,4 +42,16 @@ namespace VKT {
 
         return { xPos, yPos };
     }
+
+    void InputManager::SetCursorMode(CursorMode mode)
+    {
+        auto window = static_cast<GLFWwindow*>(g_App->GetWindow().GetNativeWindow());
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL + (int)mode);
+    }
+
+    CursorMode InputManager::GetCursorMode()
+    {
+        auto window = static_cast<GLFWwindow*>(g_App->GetWindow().GetNativeWindow());
+        return (CursorMode)(glfwGetInputMode(window, GLFW_CURSOR) - GLFW_CURSOR_NORMAL);
+    }
 }

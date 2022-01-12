@@ -16,6 +16,8 @@
 
 // Game
 #include "Game/GameLogic.h"
+#include "Game/Camera.h"
+#include "Game/EditorCamera.h"
 
 // Input
 #include "Input/KeyCodes.h"

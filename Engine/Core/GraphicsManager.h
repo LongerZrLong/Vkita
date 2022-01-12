@@ -39,6 +39,8 @@ namespace VKT {
 
         void ResetScene();
 
+        void SetPerFrame(glm::mat4 View, glm::mat4 Projection);
+
         const Rendering::Context &GetContext() const { return *m_Ctx; }
 
     private:
@@ -47,9 +49,9 @@ namespace VKT {
         void BuildCommandBuffers();
         void DrawNode(VkCommandBuffer vkCommandBuffer, SceneNode &node);
 
-        void SetupRuntimeModelMatrixUBOMap(SceneNode &node);
-        void SetupRuntimeModelMatrixDescSetMap(SceneNode &node);
-        void WriteRuntimeModelMatrixDescSetMap(SceneNode &node);
+        void SetupRuntimePerBatchUboDict(SceneNode &node);
+        void SetupRuntimePerBatchDescSetDict(SceneNode &node);
+        void WriteRuntimePerBatchDescSetDict(SceneNode &node);
 
         void UpdateRuntimeNodeModelMatrix(SceneNode &node);
         void ResetRuntimeNodeModelMatrix(SceneNode &node);
@@ -78,35 +80,19 @@ namespace VKT {
         Ref<Rendering::VertexBuffer> m_VertexBuffer;
         Ref<Rendering::IndexBuffer> m_IndexBuffer;
 
-        struct PerFrame
-        {
-            Scope<Rendering::Buffer> buffer;
-            struct Values
-            {
-                alignas(16) glm::mat4 View;
-                alignas(16) glm::mat4 Proj;
-            } values;
-        } m_PerFrame;
-
-        struct Camera
-        {
-            glm::vec3 Eye = {0.0f, 10.0f, 20.0f};
-            glm::vec3 Center = {0.0f, 0.0f, 0.0f};
-            glm::vec3 Up = {0.0f, 1.0f, 0.0f};
-        } m_Camera;
-
-        Scope<Vulkan::DescriptorSetLayout> m_MatricesDescSetLayout;
-        Scope<Vulkan::DescriptorSetLayout> m_ModelMatrixSetLayout;
+        Scope<Vulkan::DescriptorSetLayout> m_PerFrameDescSetLayout;
+        Scope<Vulkan::DescriptorSetLayout> m_PerBatchDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
 
-        Scope<Vulkan::DescriptorSet> m_MatricesDescSet;
+        Scope<Rendering::Buffer> m_PerFrameUbo;
+        Scope<Vulkan::DescriptorSet> m_PerFrameDescSet;
 
-        std::unordered_map<SceneNode*, Scope<Rendering::Buffer>> m_RuntimeModelMatrixUBOMap;
-        std::unordered_map<SceneNode*, Scope<Vulkan::DescriptorSet>> m_RuntimeModelMatrixDescSetMap;
+        std::unordered_map<SceneNode*, Scope<Rendering::Buffer>> m_RuntimePerBatchUboDict;
+        std::unordered_map<SceneNode*, Scope<Vulkan::DescriptorSet>> m_RuntimePerBatchDescSetDict;
 
         std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
-        std::vector<Scope<Rendering::Buffer>> m_MaterialUniformBuffers;
-        std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_Textures;
+        std::vector<Scope<Rendering::Buffer>> m_MaterialUbos;
+        std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_TextureDict;
 
         // Debug Info
         struct DebugPrimitive
@@ -114,7 +100,7 @@ namespace VKT {
             size_t FirstIndex;
             size_t IndexCount;
         };
-        std::unordered_map<SceneNode*, DebugPrimitive> m_DebugPrimitivesMap;
+        std::unordered_map<SceneNode*, DebugPrimitive> m_DebugPrimitivesDict;
 
         Ref<Rendering::Buffer> m_DebugVertBuffer;
         Ref<Rendering::Buffer> m_DebugIndexBuffer;

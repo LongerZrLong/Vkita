@@ -33,19 +33,20 @@ namespace VKT {
 
         void Tick()
         {
+            static bool prevReleased = true;
+
             if (g_InputManager->IsKeyPressed(Key::D))
             {
-                m_DebugKeyPressed = true;
+                if (prevReleased)
+                    g_DebugManager->ToggleDebugInfo();
+
+                prevReleased = false;
+                return;
             }
 
-            if (!g_InputManager->IsKeyPressed(Key::D) && m_DebugKeyPressed)
-            {
-                g_DebugManager->ToggleDebugInfo();
-                m_DebugKeyPressed = false;
-            }
+            prevReleased = true;
         }
 
-        bool m_DebugKeyPressed = false;
     };
 }
 
@@ -66,8 +67,8 @@ using namespace VKT;
 int main()
 {
     g_App->Initialize();
-    g_InputManager->Initialize();
     g_FileSystem->Initialize();
+    g_InputManager->Initialize();
     g_SceneManager->Initialize();
     g_PhysicsManager->Initialize();
     g_GraphicsManager->Initialize();

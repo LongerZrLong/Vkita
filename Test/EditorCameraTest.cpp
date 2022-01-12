@@ -9,26 +9,12 @@
 
 namespace VKT {
 
-    class PhysicsTestLayer : public Layer
+    class EditorCameraTestLayer : public Layer
     {
     public:
         void OnAttach()
         {
-            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/basic_physics/basic_physics.gltf"));
-
-            // Manually set rigid bodies
-            {
-                auto &scene = g_SceneManager->GetScene();
-
-                // Sphere
-                scene.m_SceneNodes[0].m_Children[0].m_CollisionType = CollisionType::Sphere;
-
-                // Plane
-                scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
-
-                // Sphere
-                scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
-            }
+            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/nanosuit/nanosuit.obj"));
 
             // Manually set debug info
             {
@@ -42,28 +28,19 @@ namespace VKT {
 
                 // z axis
                 g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
-
-                // a bounding box for each sphere
-                SceneNode &sphereNode1 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[0];
-                g_DebugManager->AddBox(sphereNode1, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
-
-                SceneNode &sphereNode2 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[2];
-                g_DebugManager->AddBox(sphereNode2, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
             }
+
+            // Reset Camera
+            m_EditorCamera.SetViewportSize(g_App->GetWindow().GetWidth(), g_App->GetWindow().GetHeight());
         }
 
         void OnUpdate()
         {
+            m_EditorCamera.OnUpdate();
+
+            g_GraphicsManager->SetPerFrame(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
+
             static bool prevReleased = true;
-
-            if (g_InputManager->IsKeyPressed(Key::R))
-            {
-                if (prevReleased)
-                    g_GraphicsManager->ResetScene();
-
-                prevReleased = false;
-                return;
-            }
 
             if (g_InputManager->IsKeyPressed(Key::D))
             {
@@ -77,6 +54,14 @@ namespace VKT {
             prevReleased = true;
         }
 
+        void OnEvent(Event &event)
+        {
+            m_EditorCamera.OnEvent(event);
+        }
+
+    private:
+        EditorCamera m_EditorCamera;
+
     };
 
     class PhysicsTestGameLogic : public GameLogic
@@ -84,7 +69,7 @@ namespace VKT {
     public:
         int Initialize()
         {
-            PushLayer(new PhysicsTestLayer());
+            PushLayer(new EditorCameraTestLayer());
 
             return 0;
         }
@@ -108,8 +93,8 @@ using namespace VKT;
 int main()
 {
     g_App->Initialize();
-    g_FileSystem->Initialize();
     g_InputManager->Initialize();
+    g_FileSystem->Initialize();
     g_SceneManager->Initialize();
     g_PhysicsManager->Initialize();
     g_GraphicsManager->Initialize();
@@ -118,7 +103,9 @@ int main()
 
     while (g_App->IsRunning())
     {
-        g_App->Tick();
+        if (g_App->IsMinimized())
+            continue;
+
         g_FileSystem->Tick();
         g_InputManager->Tick();
         g_SceneManager->Tick();

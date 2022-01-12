@@ -182,16 +182,16 @@ namespace VKT::Rendering {
     {
         VKT_CORE_INFO("Vulkan SDK Header Version: {}", VK_HEADER_VERSION);
 
-        VKT_CORE_INFO("Vulkan Instance Extensions: ");
-        for (const auto &extension : GetExtensions())
-            VKT_CORE_INFO("-  {} ({})", extension.extensionName, Vulkan::Version(extension.specVersion));
-
-        VKT_CORE_INFO("Vulkan Instance Layers: ");
-        for (const auto &layer : GetLayers())
-            VKT_CORE_INFO("-  {} ({}) : {}", layer.layerName, Vulkan::Version(layer.specVersion), layer.description);
+//        VKT_CORE_INFO("Vulkan Instance Extensions: ");
+//        for (const auto &extension : GetExtensions())
+//            VKT_CORE_INFO("-  {} ({})", extension.extensionName, Vulkan::Version(extension.specVersion));
+//
+//        VKT_CORE_INFO("Vulkan Instance Layers: ");
+//        for (const auto &layer : GetLayers())
+//            VKT_CORE_INFO("-  {} ({}) : {}", layer.layerName, Vulkan::Version(layer.specVersion), layer.description);
 
         VKT_CORE_INFO("Vulkan Devices: ");
-        for (const auto &device : GetPhysicalDevices())
+        for (const auto &physicalDevice : GetPhysicalDevices())
         {
             VkPhysicalDeviceDriverProperties driverProp{};
             driverProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
@@ -200,16 +200,17 @@ namespace VKT::Rendering {
             deviceProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             deviceProp.pNext = &driverProp;
 
-            vkGetPhysicalDeviceProperties2(device, &deviceProp);
+            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProp);
 
-            const auto& prop = deviceProp.properties;
+            const auto &prop = deviceProp.properties;
 
             const Vulkan::Version vulkanVersion(prop.apiVersion);
             const Vulkan::Version driverVersion(prop.driverVersion, prop.vendorID);
 
-            VKT_CORE_INFO("-  [{}] {} '{}' ({}: vulkan {}, driver {} {} - {})",
-                          prop.deviceID,
-                          Vulkan::Strings::VendorId(prop.vendorID),
+            std::string chosen = physicalDevice == device->GetVkPhysicalDevice() ? "√" : " ";
+
+            VKT_CORE_INFO("-  [{}] '{}' ({}: vulkan {}, driver {} {} - {})",
+                          chosen,
                           prop.deviceName,
                           Vulkan::Strings::DeviceType(prop.deviceType),
                           vulkanVersion,

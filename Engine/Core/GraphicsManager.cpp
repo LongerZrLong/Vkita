@@ -5,7 +5,6 @@
 #include "Config.h"
 #include "FileSystem.h"
 #include "SceneManager.h"
-#include "InputManager.h"
 #include "PhysicsManager.h"
 #include "DebugManager.h"
 
@@ -56,33 +55,6 @@ namespace VKT {
             g_DebugManager->NotifySceneIsRenderingQueued();
         }
 
-        bool leftPressed = g_InputManager->IsKeyPressed(Key::Left);
-        bool rightPressed = g_InputManager->IsKeyPressed(Key::Right);
-        if (leftPressed || rightPressed)
-        {
-            auto &camera = g_GraphicsManager->m_Camera;
-
-            glm::vec3 dir = camera.Eye - camera.Center;
-
-            static float rotSpeed = 0.01f;
-
-            glm::mat4 rot(1.0f);
-
-            if (leftPressed)
-                rot = glm::rotate(rot, rotSpeed * glm::pi<float>(), camera.Up);
-
-            if (rightPressed)
-                rot = glm::rotate(rot, -rotSpeed * glm::pi<float>(), camera.Up);
-
-            dir = glm::vec3(rot * glm::vec4(dir, 1.0f));
-
-            camera.Eye = camera.Center + dir;
-        }
-
-        // Update PerFrame Data
-        m_PerFrame.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
-        m_PerFrame.buffer->Update(&m_PerFrame.values);
-
         // Update model matrix for each scene node
         auto &scene = g_SceneManager->GetScene();
         for (auto &node : scene.m_SceneNodes)
@@ -96,6 +68,13 @@ namespace VKT {
         EndFrame();
 
         Present();
+    }
+
+    void GraphicsManager::SetPerFrame(glm::mat4 View, glm::mat4 Projection)
+    {
+        Projection[1][1] *= -1;
+        glm::mat4 viewProjection = Projection * View;
+        m_PerFrameUbo->Update(&viewProjection);
     }
 
     bool GraphicsManager::BeginFrame()
@@ -183,39 +162,33 @@ namespace VKT {
         m_VertexBuffer = CreateRef<Rendering::VertexBuffer>(scene.m_Vertices);
         m_IndexBuffer = CreateRef<Rendering::IndexBuffer>(scene.m_Indices);
 
-        m_PerFrame.buffer = CreateScope<Rendering::Buffer>(sizeof(m_PerFrame.values),
-                                                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        // PerFrameUbo has a 4x4 ViewProjection matrix
+        m_PerFrameUbo = CreateScope<Rendering::Buffer>(
+            sizeof(glm::mat4),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         // Setup model matrix uniform buffer object
         for (auto &node : scene.m_SceneNodes)
         {
-            SetupRuntimeModelMatrixUBOMap(node);
+            SetupRuntimePerBatchUboDict(node);
         }
 
         for (auto &it : scene.m_Textures)
         {
-            m_Textures[it.first] = CreateScope<Rendering::Texture2D>(*it.second);
+            m_TextureDict[it.first] = CreateScope<Rendering::Texture2D>(*it.second);
         }
 
-        m_MaterialUniformBuffers.resize(scene.m_Materials.size());
+        m_MaterialUbos.resize(scene.m_Materials.size());
         for (size_t i = 0; i < scene.m_Materials.size(); i++)
         {
-            m_MaterialUniformBuffers[i] = CreateScope<Rendering::Buffer>(
+            m_MaterialUbos[i] = CreateScope<Rendering::Buffer>(
                 sizeof(Material::Parameter),
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-            m_MaterialUniformBuffers[i]->Update(&scene.m_Materials[i].m_Parameter);
+            m_MaterialUbos[i]->Update(&scene.m_Materials[i].m_Parameter);
         }
-
-        // Temporary set projection, view matrix here
-        m_PerFrame.values.Proj = glm::perspective(glm::radians(45.0f), g_App->GetWindow().GetWidth() / (float) g_App->GetWindow().GetHeight(), 0.1f, 1000.0f);
-        m_PerFrame.values.Proj[1][1] *= -1;
-
-        m_PerFrame.values.View = glm::lookAt(m_Camera.Eye, m_Camera.Center, m_Camera.Up);
-
-        m_PerFrame.buffer->Update(&m_PerFrame.values);
 
         // Set up descriptors
         // One uniform buffer for view and projection matrix
@@ -225,22 +198,22 @@ namespace VKT {
         std::vector<VkDescriptorPoolSize> poolSizes =
             {
                 Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
-                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_RuntimeModelMatrixUBOMap.size()),
+                Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_RuntimePerBatchUboDict.size()),
                 Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, scene.m_Materials.size()),
                 Vulkan::Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * scene.m_Materials.size())
             };
 
-        const uint32_t maxSetCount = 1 + m_RuntimeModelMatrixUBOMap.size() + scene.m_Materials.size();
+        const uint32_t maxSetCount = 1 + m_RuntimePerBatchUboDict.size() + scene.m_Materials.size();
         VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
         m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Ctx->device, &descriptorPoolInfo);
 
-        // Descriptor set layout for shader data matrices (View + Proj matrices)
+        // Descriptor set layout for per frame matrix (ViewProjection Matrix)
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
             {
                 Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
             };
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-        m_MatricesDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
+        m_PerFrameDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor set layout for model matrix
         setLayoutBindings =
@@ -248,7 +221,7 @@ namespace VKT {
                 Vulkan::Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
             };
         descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-        m_ModelMatrixSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
+        m_PerBatchDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
         // Descriptor Set layout for each material
         setLayoutBindings =
@@ -260,14 +233,14 @@ namespace VKT {
         descriptorSetLayoutCI = Vulkan::Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
         m_MaterialDescSetLayout = CreateScope<Vulkan::DescriptorSetLayout>(*m_Ctx->device, &descriptorSetLayoutCI);
 
-        // Descriptor Set for shader data matrices
-        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MatricesDescSetLayout->GetVkHandle(), 1);
-        m_MatricesDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
+        // Descriptor Set for per frame uniform
+        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_PerFrameDescSetLayout->GetVkHandle(), 1);
+        m_PerFrameDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
 
         // Descriptor Set for each scene node model matrix
         for (auto &node : scene.m_SceneNodes)
         {
-            SetupRuntimeModelMatrixDescSetMap(node);
+            SetupRuntimePerBatchDescSetDict(node);
         }
 
         // Descriptor Set for each material
@@ -278,41 +251,41 @@ namespace VKT {
             m_MaterialDescSets[i] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
         }
 
-        // Write Descriptor Set for shader data matrices
-        VkDescriptorBufferInfo bufferInfo = m_PerFrame.buffer->GetDescriptor();
-        m_MatricesDescSet->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
+        // Write Descriptor Set for per frame uniform
+        VkDescriptorBufferInfo bufferInfo = m_PerFrameUbo->GetDescriptor();
+        m_PerFrameDescSet->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
 
         // Write Descriptor Set for each scene node model matrix
         for (auto &node : scene.m_SceneNodes)
         {
-            WriteRuntimeModelMatrixDescSetMap(node);
+            WriteRuntimePerBatchDescSetDict(node);
         }
 
         // Write Descriptor Set for each material
         for (size_t i = 0; i < m_MaterialDescSets.size(); i++)
         {
-            VkDescriptorBufferInfo uboInfo = m_MaterialUniformBuffers[i]->GetDescriptor();
+            VkDescriptorBufferInfo uboInfo = m_MaterialUbos[i]->GetDescriptor();
             m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uboInfo);
 
             if (!scene.m_Materials[i].m_DiffuseTextureName.empty())
             {
-                VkDescriptorImageInfo diffMap = m_Textures[scene.m_Materials[i].m_DiffuseTextureName]->GetDescriptor();
+                VkDescriptorImageInfo diffMap = m_TextureDict[scene.m_Materials[i].m_DiffuseTextureName]->GetDescriptor();
                 m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &diffMap);
             }
             else
             {
-                VkDescriptorImageInfo defaultMap = m_Textures["_default"]->GetDescriptor();
+                VkDescriptorImageInfo defaultMap = m_TextureDict["_default"]->GetDescriptor();
                 m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &defaultMap);
             }
 
             if (!scene.m_Materials[i].m_SpecularTextureName.empty())
             {
-                VkDescriptorImageInfo specMap = m_Textures[scene.m_Materials[i].m_SpecularTextureName]->GetDescriptor();
+                VkDescriptorImageInfo specMap = m_TextureDict[scene.m_Materials[i].m_SpecularTextureName]->GetDescriptor();
                 m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, &specMap);
             }
             else
             {
-                VkDescriptorImageInfo defaultMap = m_Textures["_default"]->GetDescriptor();
+                VkDescriptorImageInfo defaultMap = m_TextureDict["_default"]->GetDescriptor();
                 m_MaterialDescSets[i]->Update(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, &defaultMap);
             }
 
@@ -327,8 +300,8 @@ namespace VKT {
         // Pipeline layout
         std::array<VkDescriptorSetLayout, 3> setLayouts =
             {
-                m_MatricesDescSetLayout->GetVkHandle(),
-                m_ModelMatrixSetLayout->GetVkHandle(),
+                m_PerFrameDescSetLayout->GetVkHandle(),
+                m_PerBatchDescSetLayout->GetVkHandle(),
                 m_MaterialDescSetLayout->GetVkHandle()
             };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
@@ -403,19 +376,19 @@ namespace VKT {
             vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_VertexBuffer->GetBuffer().GetVkHandle(), offsets);
             vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
-            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetVkHandle(), 0, 1, &m_PerFrameDescSet->GetVkHandle(), 0, nullptr);
 
             for (auto &node : scene.m_SceneNodes)
                 DrawNode(vkCommandBuffer, node);
 
             // If there is no debug info
-            if (!m_DebugPrimitivesMap.empty() && g_DebugManager->IsDrawDebugInfo())
+            if (!m_DebugPrimitivesDict.empty() && g_DebugManager->IsDrawDebugInfo())
             {
                 // Use DebugGraphicsPipeline to draw debug info
                 vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_DebugVertBuffer->GetBuffer().GetVkHandle(), offsets);
                 vkCmdBindIndexBuffer(vkCommandBuffer, m_DebugIndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
                 vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugGraphicsPipeline->GetVkHandle());
-                vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_MatricesDescSet->GetVkHandle(), 0, nullptr);
+                vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_PerFrameDescSet->GetVkHandle(), 0, nullptr);
 
                 for (auto &node : scene.m_SceneNodes)
                     DrawNodeDebugInfo(vkCommandBuffer, node);
@@ -434,7 +407,7 @@ namespace VKT {
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     m_PipelineLayout->GetVkHandle(), 1, 1,
-                                    &m_RuntimeModelMatrixDescSetMap[&node]->GetVkHandle(), 0, nullptr);
+                                    &m_RuntimePerBatchDescSetDict[&node]->GetVkHandle(), 0, nullptr);
 
             for (auto &primitive : node.m_Mesh.m_Primitives)
             {
@@ -455,39 +428,39 @@ namespace VKT {
         }
     }
 
-    void GraphicsManager::SetupRuntimeModelMatrixUBOMap(SceneNode &node)
+    void GraphicsManager::SetupRuntimePerBatchUboDict(SceneNode &node)
     {
-        m_RuntimeModelMatrixUBOMap[&node] = CreateScope<Rendering::Buffer>(
+        m_RuntimePerBatchUboDict[&node] = CreateScope<Rendering::Buffer>(
             sizeof(glm::mat4),
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         for (auto &child : node.m_Children)
         {
-            SetupRuntimeModelMatrixUBOMap(child);
+            SetupRuntimePerBatchUboDict(child);
         }
     }
 
-    void GraphicsManager::SetupRuntimeModelMatrixDescSetMap(SceneNode &node)
+    void GraphicsManager::SetupRuntimePerBatchDescSetDict(SceneNode &node)
     {
-        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_ModelMatrixSetLayout->GetVkHandle(), 1);
-        m_RuntimeModelMatrixDescSetMap[&node] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
+        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_PerBatchDescSetLayout->GetVkHandle(), 1);
+        m_RuntimePerBatchDescSetDict[&node] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
 
         for (auto &child : node.m_Children)
         {
-            SetupRuntimeModelMatrixDescSetMap(child);
+            SetupRuntimePerBatchDescSetDict(child);
         }
     }
 
-    void GraphicsManager::WriteRuntimeModelMatrixDescSetMap(SceneNode &node)
+    void GraphicsManager::WriteRuntimePerBatchDescSetDict(SceneNode &node)
     {
         // Write Descriptor Set for model matrix
-        auto bufferInfo = m_RuntimeModelMatrixUBOMap[&node]->GetDescriptor();
-        m_RuntimeModelMatrixDescSetMap[&node]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
+        auto bufferInfo = m_RuntimePerBatchUboDict[&node]->GetDescriptor();
+        m_RuntimePerBatchDescSetDict[&node]->Update(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);
 
         for (auto &child : node.m_Children)
         {
-            WriteRuntimeModelMatrixDescSetMap(child);
+            WriteRuntimePerBatchDescSetDict(child);
         }
     }
 
@@ -504,7 +477,7 @@ namespace VKT {
             modelMatrix = node.GetLocalToWorldMatrix();
         }
 
-        m_RuntimeModelMatrixUBOMap[&node]->Update(&modelMatrix);
+        m_RuntimePerBatchUboDict[&node]->Update(&modelMatrix);
 
         for (auto &child : node.m_Children)
         {
@@ -529,7 +502,7 @@ namespace VKT {
     {
         glm::mat4 modelMatrix = node.GetLocalToWorldMatrix();
 
-        m_RuntimeModelMatrixUBOMap[&node]->Update(&modelMatrix);
+        m_RuntimePerBatchUboDict[&node]->Update(&modelMatrix);
 
         for (auto &child : node.m_Children)
         {
@@ -564,12 +537,12 @@ namespace VKT {
                 indicesCount++;
             }
 
-            m_DebugPrimitivesMap[it.first].FirstIndex = curSize;
-            m_DebugPrimitivesMap[it.first].IndexCount = indicesCount;
+            m_DebugPrimitivesDict[it.first].FirstIndex = curSize;
+            m_DebugPrimitivesDict[it.first].IndexCount = indicesCount;
         }
 
         // If there is no debug info, return immediately
-        if (m_DebugPrimitivesMap.empty()) return;
+        if (m_DebugPrimitivesDict.empty()) return;
 
         // Create Vertex Buffer for Debug Info
         m_DebugVertBuffer = CreateRef<Rendering::Buffer>(sizeof(debugVertices[0]) * debugVertices.size(),
@@ -602,8 +575,8 @@ namespace VKT {
         // Pipeline layout
         std::array<VkDescriptorSetLayout, 2> setLayouts =
             {
-                m_MatricesDescSetLayout->GetVkHandle(),
-                m_ModelMatrixSetLayout->GetVkHandle(),
+                m_PerFrameDescSetLayout->GetVkHandle(),
+                m_PerBatchDescSetLayout->GetVkHandle(),
             };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
         m_DebugPipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
@@ -655,15 +628,15 @@ namespace VKT {
 
     void GraphicsManager::DrawNodeDebugInfo(VkCommandBuffer vkCommandBuffer, SceneNode &node)
     {
-        if (m_DebugPrimitivesMap.count(&node) > 0)
+        if (m_DebugPrimitivesDict.count(&node) > 0)
         {
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     m_DebugPipelineLayout->GetVkHandle(),
                                     1, 1,
-                                    &m_RuntimeModelMatrixDescSetMap[&node]->GetVkHandle(), 0, nullptr);
+                                    &m_RuntimePerBatchDescSetDict[&node]->GetVkHandle(), 0, nullptr);
 
-            vkCmdDrawIndexed(vkCommandBuffer, m_DebugPrimitivesMap[&node].IndexCount, 1, m_DebugPrimitivesMap[&node].FirstIndex, 0, 0);
+            vkCmdDrawIndexed(vkCommandBuffer, m_DebugPrimitivesDict[&node].IndexCount, 1, m_DebugPrimitivesDict[&node].FirstIndex, 0, 0);
         }
 
         for (auto &child : node.m_Children)

@@ -8,7 +8,7 @@ namespace VKT {
     class KeyEvent : public Event
     {
     public:
-        KeyCode GetKeyCode() const { return m_KeyCode; }
+        KeyCode GetKey() const { return m_KeyCode; }
 
         EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 
