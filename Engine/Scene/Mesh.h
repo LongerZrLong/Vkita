@@ -11,8 +11,16 @@ namespace VKT {
         uint32_t MaterialIndex;
     };
 
+    struct BoundingBox
+    {
+        glm::vec3 Centroid;
+        glm::vec3 Extent;
+    };
+
     struct Mesh
     {
         std::vector<Primitive> m_Primitives;
+
+        BoundingBox GetBoundingBox() const;
     };
 }

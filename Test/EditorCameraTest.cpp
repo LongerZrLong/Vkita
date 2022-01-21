@@ -64,7 +64,7 @@ namespace VKT {
 
     };
 
-    class PhysicsTestGameLogic : public GameLogic
+    class EditorCameraGameLogic : public GameLogic
     {
     public:
         int Initialize()
@@ -84,7 +84,7 @@ namespace VKT {
     GraphicsManager *g_GraphicsManager = new GraphicsManager();
     InputManager    *g_InputManager = new InputManager();
     PhysicsManager  *g_PhysicsManager = new PhysicsManager();
-    GameLogic       *g_GameLogic = new PhysicsTestGameLogic();
+    GameLogic       *g_GameLogic = new EditorCameraGameLogic();
     DebugManager    *g_DebugManager = new DebugManager();
 }
 

@@ -43,17 +43,23 @@ namespace VKT {
                 // z axis
                 g_DebugManager->AddLine(rootNode, {0.f, 0.0f, -1000.0f}, {0.0f, 0.0f, 1000.0f}, {0.0f, 0.0f, 1.0f});
 
-                // a bounding box for each sphere
-                SceneNode &sphereNode1 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[0];
-                g_DebugManager->AddBox(sphereNode1, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
-
-                SceneNode &sphereNode2 = g_SceneManager->GetScene().m_SceneNodes[0].m_Children[2];
-                g_DebugManager->AddBox(sphereNode2, {1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
+                AddBoundingBox(rootNode);
             }
+
+            Eye = glm::vec3(-10.0f, 10.0f, 10.0f);
+            Center = glm::vec3(0.0f, 0.0f, 0.0f);
+            Up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+            View = glm::lookAt(Eye, Center, Up);
+            Proj = glm::perspective(glm::radians(60.0f),
+                                    (float)g_App->GetWindow().GetWidth() / (float)g_App->GetWindow().GetHeight(),
+                                    0.1f, 1000.0f);
         }
 
         void OnUpdate()
         {
+            g_GraphicsManager->SetPerFrame(View, Proj);
+
             static bool prevReleased = true;
 
             if (g_InputManager->IsKeyPressed(Key::R))
@@ -77,6 +83,25 @@ namespace VKT {
             prevReleased = true;
         }
 
+
+        void AddBoundingBox(SceneNode &node)
+        {
+            BoundingBox bbox = node.m_Mesh.GetBoundingBox();
+            g_DebugManager->AddBox(node, bbox.Centroid - bbox.Extent, bbox.Centroid + bbox.Extent);
+
+            for (auto &child : node.m_Children)
+            {
+                AddBoundingBox(child);
+            }
+        }
+
+    private:
+        glm::mat4 View;
+        glm::mat4 Proj;
+
+        glm::vec3 Eye;
+        glm::vec3 Center;
+        glm::vec3 Up;
     };
 
     class PhysicsTestGameLogic : public GameLogic

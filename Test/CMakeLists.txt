@@ -1,4 +1,4 @@
-set(TEST_CASES FileSystemTest InputEventTest SceneLoadTest SceneRenderTest BasicPhysicsTest EditorCameraTest
+set(TEST_CASES FileSystemTest InputEventTest SceneLoadTest BasicPhysicsTest EditorCameraTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)
