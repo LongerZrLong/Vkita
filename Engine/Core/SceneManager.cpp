@@ -8,7 +8,7 @@ namespace VKT {
 
     int SceneManager::Initialize()
     {
-        m_Scene = CreateRef<Scene>();
+        m_Scene = CreateScope<Scene>();
         return 0;
     }
 
@@ -24,7 +24,7 @@ namespace VKT {
     {
         auto parser = AssimpParser();
 
-        m_Scene = parser.ParseScene(sceneFilePath);
+        parser.ParseScene(m_Scene, sceneFilePath);
 
         if (!m_Scene)
             return -1;

@@ -26,7 +26,7 @@ namespace VKT {
         void NotifySceneIsRenderingQueued();
 
     private:
-        Ref<Scene> m_Scene;
+        Scope<Scene> m_Scene;
         bool m_DirtyFlag = false;
 
     };

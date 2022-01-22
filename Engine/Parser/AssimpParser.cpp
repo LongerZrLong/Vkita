@@ -26,7 +26,7 @@ namespace VKT {
         aiProcess_ValidateDataStructure |
         aiProcess_Debone;
 
-    Ref<Scene> AssimpParser::ParseScene(const std::string &path)
+    void AssimpParser::ParseScene(Scope<Scene> &scene, const std::string &path)
     {
         m_SceneRootDir = g_FileSystem->ParentPath(path);
 
@@ -35,18 +35,16 @@ namespace VKT {
         m_AiScene = importer.ReadFile(path, importerFlags);
 
         if(!m_AiScene || m_AiScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !m_AiScene->mRootNode)
-            return nullptr;
+        {
+            scene = nullptr; return;
+        }
 
-        auto scene = CreateRef<Scene>();
-
-        ProcessMaterials(scene);
-        ProcessTextures(scene);
-        ProcessNode(m_AiScene->mRootNode, scene, nullptr);
-
-        return scene;
+        ProcessMaterials(scene.get());
+        ProcessTextures(scene.get());
+        ProcessNode(m_AiScene->mRootNode, scene.get(), nullptr);
     }
 
-    void AssimpParser::ProcessMaterials(Ref<Scene> &scene)
+    void AssimpParser::ProcessMaterials(Scene *scene)
     {
         scene->m_Materials.resize(m_AiScene->mNumMaterials);
         for (size_t i = 0; i < m_AiScene->mNumMaterials; i++)
@@ -103,7 +101,7 @@ namespace VKT {
         }
     }
 
-    void AssimpParser::ProcessTextures(Ref<Scene> &scene)
+    void AssimpParser::ProcessTextures(Scene *scene)
     {
         auto &textures = scene->m_Textures;
         for (const Material &mat : scene->m_Materials)
@@ -132,7 +130,7 @@ namespace VKT {
         textures["_default"]->m_Data = reinterpret_cast<uint8_t*>(new uint32_t(0xffffffff));
     }
 
-    void AssimpParser::ProcessNode(aiNode *pNode, Ref<Scene> &scene, SceneNode *parent)
+    void AssimpParser::ProcessNode(aiNode *pNode, Scene *scene, SceneNode *parent)
     {
         if (parent)
             parent->m_Children.emplace_back(SceneNode());

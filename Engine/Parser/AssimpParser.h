@@ -16,12 +16,12 @@ namespace VKT {
         AssimpParser() = default;
         ~AssimpParser() = default;
 
-        Ref<Scene> ParseScene(const std::string &path);
+        void ParseScene(Scope<Scene> &scene, const std::string &path);
 
     private:
-        void ProcessMaterials(Ref<Scene>&);
-        void ProcessTextures(Ref<Scene>&);
-        void ProcessNode(aiNode*, Ref<Scene>&, SceneNode*);
+        void ProcessMaterials(Scene*);
+        void ProcessTextures(Scene*);
+        void ProcessNode(aiNode*, Scene*, SceneNode*);
 
     private:
         const aiScene *m_AiScene;

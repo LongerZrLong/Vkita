@@ -1,5 +1,3 @@
-#include <Vkita.h>
-
 #include <Core/FileSystem.h>
 #include <Core/SceneManager.h>
 
