@@ -18,7 +18,7 @@ namespace VKT {
 
             // Manually set debug info
             {
-                SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes[0];
+                SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes.front();
 
                 // x axis
                 g_DebugManager->AddLine(rootNode, {-1000.f, 0.0f, 0.0f}, {1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});

@@ -41,6 +41,8 @@ namespace VKT {
 
         ProcessMaterials(scene.get());
         ProcessTextures(scene.get());
+        ProcessLights(scene.get());
+
         ProcessNode(m_AiScene->mRootNode, scene.get(), nullptr);
     }
 
@@ -130,6 +132,54 @@ namespace VKT {
         textures["_default"]->m_Data = reinterpret_cast<uint8_t*>(new uint32_t(0xffffffff));
     }
 
+    void AssimpParser::ProcessLights(Scene *scene)
+    {
+        for (size_t i = 0; i < m_AiScene->mNumLights; i++)
+        {
+            m_LightIndexDict[m_AiScene->mLights[i]->mName.C_Str()] = i;
+            aiLight &ref = *m_AiScene->mLights[i];
+
+            Light light;
+
+            light.Node = nullptr;
+            light.IsCastShadow = true;
+
+            switch (ref.mType)
+            {
+                case aiLightSource_DIRECTIONAL: { light.Type = LightType::Directional; break; }
+
+                case aiLightSource_POINT: { light.Type = LightType::Point; break; }
+
+                case aiLightSource_SPOT: { light.Type = LightType::Spot; break; }
+
+                case aiLightSource_AMBIENT: { light.Type = LightType::Ambient; break; }
+
+                case aiLightSource_AREA: { light.Type = LightType::Area; break; }
+
+                default: { light.Type = LightType::Undefined; break; }
+            }
+
+            light.Position = {ref.mPosition.x, ref.mPosition.y, ref.mPosition.z};
+            light.Direction = {ref.mDirection.x, ref.mDirection.y, ref.mDirection.z};
+            light.Up = {ref.mUp.x, ref.mUp.y, ref.mUp.z};
+
+            light.AttenConstant = ref.mAttenuationConstant;
+            light.AttenLinear = ref.mAttenuationLinear;
+            light.AttenQuadratic = ref.mAttenuationQuadratic;
+
+            light.DiffuseColor = {ref.mColorDiffuse.r, ref.mColorDiffuse.g, ref.mColorDiffuse.b};
+            light.SpecularColor = {ref.mColorSpecular.r, ref.mColorSpecular.g, ref.mColorSpecular.b};
+            light.AmbientColor = {ref.mColorAmbient.r, ref.mColorAmbient.g, ref.mColorAmbient.b};
+
+            light.AngleInnerCone = ref.mAngleInnerCone;
+            light.AngleOuterCone = ref.mAngleOuterCone;
+
+            light.Size = {ref.mSize.x, ref.mSize.y};
+
+            scene->m_Lights.push_back(light);
+        }
+    }
+
     void AssimpParser::ProcessNode(aiNode *pNode, Scene *scene, SceneNode *parent)
     {
         if (parent)
@@ -137,7 +187,8 @@ namespace VKT {
         else
             scene->m_SceneNodes.emplace_back(SceneNode());
 
-        SceneNode *node = parent ? &parent->m_Children[parent->m_Children.size() - 1] : &scene->m_SceneNodes[scene->m_SceneNodes.size() - 1];
+        // Pointer to the newly added scene node
+        SceneNode *node = parent ? &parent->m_Children.back() : &scene->m_SceneNodes.back();
 
         node->m_Name = pNode->mName.C_Str();
         node->m_Parent = parent;
@@ -145,11 +196,6 @@ namespace VKT {
         // Note: aiMatrix4x4 is row major. glm::mat4 is column major.
         aiMatrix4x4 mat = pNode->mTransformation;
         node->m_Transform.SetMatrix4x4(glm::transpose(glm::make_mat4x4(&mat[0][0])));
-
-        for (size_t i = 0; i < pNode->mNumChildren; i++)
-        {
-            ProcessNode(pNode->mChildren[i], scene, node);
-        }
 
         for (size_t j = 0; j < pNode->mNumMeshes; j++)
         {
@@ -204,6 +250,20 @@ namespace VKT {
             node->m_Mesh.m_Primitives.emplace_back(primitive);
         }
 
+        if (m_LightIndexDict.find(node->m_Name) != m_LightIndexDict.end())
+        {
+            // Link the light and the node
+            Light &light = scene->m_Lights[m_LightIndexDict[node->m_Name]];
+
+            light.Node = node;
+            node->m_Light = &light;
+        }
+
+        // recurse to process children
+        for (size_t i = 0; i < pNode->mNumChildren; i++)
+        {
+            ProcessNode(pNode->mChildren[i], scene, node);
+        }
     }
 
 }

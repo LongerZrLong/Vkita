@@ -20,19 +20,24 @@ namespace VKT {
             {
                 auto &scene = g_SceneManager->GetScene();
 
+                auto root = scene.m_SceneNodes.front();
+                auto it = scene.m_SceneNodes.front().m_Children.begin();
+
                 // Sphere
-                scene.m_SceneNodes[0].m_Children[0].m_CollisionType = CollisionType::Sphere;
+                it->m_CollisionType = CollisionType::Sphere;
 
                 // Plane
-                scene.m_SceneNodes[0].m_Children[1].m_CollisionType = CollisionType::Box;
+                it++;
+                it->m_CollisionType = CollisionType::Box;
 
                 // Sphere
-                scene.m_SceneNodes[0].m_Children[2].m_CollisionType = CollisionType::Sphere;
+                it++;
+                it->m_CollisionType = CollisionType::Sphere;
             }
 
             // Manually set debug info
             {
-                SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes[0];
+                SceneNode &rootNode = g_SceneManager->GetScene().m_SceneNodes.front();
 
                 // x axis
                 g_DebugManager->AddLine(rootNode, {-1000.f, 0.0f, 0.0f}, {1000.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});

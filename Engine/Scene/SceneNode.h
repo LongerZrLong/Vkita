@@ -1,9 +1,11 @@
 #pragma once
 
 #include <vector>
+#include <list>
 
 #include "Transform.h"
 #include "Mesh.h"
+#include "Light.h"
 
 #include "Core/Base.h"
 
@@ -19,7 +21,7 @@ namespace VKT {
     public:
         std::string m_Name;
         SceneNode *m_Parent;
-        std::vector<SceneNode> m_Children;
+        std::list<SceneNode> m_Children;
 
         Mesh m_Mesh;
 
@@ -28,6 +30,8 @@ namespace VKT {
 
         CollisionType m_CollisionType = CollisionType::None;
         void *m_RigidBody = nullptr;
+
+        Light *m_Light = nullptr;
 
     public:
         glm::mat4 GetLocalToWorldMatrix() const;

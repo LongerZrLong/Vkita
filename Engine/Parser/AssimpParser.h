@@ -21,12 +21,14 @@ namespace VKT {
     private:
         void ProcessMaterials(Scene*);
         void ProcessTextures(Scene*);
+        void ProcessLights(Scene*);
         void ProcessNode(aiNode*, Scene*, SceneNode*);
 
     private:
-        const aiScene *m_AiScene;
+        const aiScene *m_AiScene = nullptr;
 
         std::string m_SceneRootDir;
 
+        std::unordered_map<std::string, size_t> m_LightIndexDict;
     };
 }
