@@ -39,7 +39,7 @@ namespace VKT {
 
         void ResetScene();
 
-        void SetPerFrame(glm::mat4 View, glm::mat4 Projection);
+        void SetViewProj(glm::mat4 View, glm::mat4 Projection);
 
         const Rendering::Context &GetContext() const { return *m_Ctx; }
 
@@ -56,6 +56,9 @@ namespace VKT {
         void UpdateRuntimeNodeModelMatrix(SceneNode &node);
         void ResetRuntimeNodeModelMatrix(SceneNode &node);
 
+        void CalculateLights();
+
+        // Debug
         void InitializeDebugInfo();
         void PrepareDebugPipeline();
         void DrawNodeDebugInfo(VkCommandBuffer vkCommandBuffer, SceneNode &node);
@@ -80,19 +83,37 @@ namespace VKT {
         Ref<Rendering::VertexBuffer> m_VertexBuffer;
         Ref<Rendering::IndexBuffer> m_IndexBuffer;
 
+        // TODO: Light descriptor set layout should be within per frame descriptor set layout
         Scope<Vulkan::DescriptorSetLayout> m_PerFrameDescSetLayout;
+        Scope<Vulkan::DescriptorSetLayout> m_LightDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_PerBatchDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
 
-        Scope<Rendering::Buffer> m_PerFrameUbo;
-        Scope<Vulkan::DescriptorSet> m_PerFrameDescSet;
+        // PerFrame view projection matrices
+        struct
+        {
+            struct
+            {
+                alignas(16) glm::mat4 View;
+                alignas(16) glm::mat4 Proj;
+            } Values;
 
+            Scope<Rendering::Buffer> Ubo;
+            Scope<Vulkan::DescriptorSet> DescSet;
+        } m_ViewProj;
+
+        // PerBatch model matrix
         std::unordered_map<SceneNode*, Scope<Rendering::Buffer>> m_RuntimePerBatchUboDict;
         std::unordered_map<SceneNode*, Scope<Vulkan::DescriptorSet>> m_RuntimePerBatchDescSetDict;
 
+        // PerBatch PerMesh Material
         std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
         std::vector<Scope<Rendering::Buffer>> m_MaterialUbos;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_TextureDict;
+
+        // PerFrame Light
+        Scope<Rendering::Buffer> m_LightUbo;
+        Scope<Vulkan::DescriptorSet> m_LightDescSet;
 
         // Debug Info
         struct DebugPrimitive

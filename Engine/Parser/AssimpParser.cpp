@@ -141,40 +141,40 @@ namespace VKT {
 
             Light light;
 
-            light.Node = nullptr;
-            light.IsCastShadow = true;
+            light.m_Node = nullptr;
+            light.m_IsCastShadow = true;
 
             switch (ref.mType)
             {
-                case aiLightSource_DIRECTIONAL: { light.Type = LightType::Directional; break; }
+                case aiLightSource_DIRECTIONAL: { light.m_Parameter.Type = LightType::Directional; break; }
 
-                case aiLightSource_POINT: { light.Type = LightType::Point; break; }
+                case aiLightSource_POINT: { light.m_Parameter.Type = LightType::Point; break; }
 
-                case aiLightSource_SPOT: { light.Type = LightType::Spot; break; }
+                case aiLightSource_SPOT: { light.m_Parameter.Type = LightType::Spot; break; }
 
-                case aiLightSource_AMBIENT: { light.Type = LightType::Ambient; break; }
+                case aiLightSource_AMBIENT: { light.m_Parameter.Type = LightType::Ambient; break; }
 
-                case aiLightSource_AREA: { light.Type = LightType::Area; break; }
+                case aiLightSource_AREA: { light.m_Parameter.Type = LightType::Area; break; }
 
-                default: { light.Type = LightType::Undefined; break; }
+                default: { light.m_Parameter.Type = LightType::Undefined; break; }
             }
 
-            light.Position = {ref.mPosition.x, ref.mPosition.y, ref.mPosition.z};
-            light.Direction = {ref.mDirection.x, ref.mDirection.y, ref.mDirection.z};
-            light.Up = {ref.mUp.x, ref.mUp.y, ref.mUp.z};
+            light.m_Parameter.Position = {ref.mPosition.x, ref.mPosition.y, ref.mPosition.z};
+            light.m_Parameter.Direction = {ref.mDirection.x, ref.mDirection.y, ref.mDirection.z};
+            light.m_Parameter.Up = {ref.mUp.x, ref.mUp.y, ref.mUp.z};
 
-            light.AttenConstant = ref.mAttenuationConstant;
-            light.AttenLinear = ref.mAttenuationLinear;
-            light.AttenQuadratic = ref.mAttenuationQuadratic;
+            light.m_Parameter.AttenConstant = ref.mAttenuationConstant;
+            light.m_Parameter.AttenLinear = ref.mAttenuationLinear;
+            light.m_Parameter.AttenQuadratic = ref.mAttenuationQuadratic;
 
-            light.DiffuseColor = {ref.mColorDiffuse.r, ref.mColorDiffuse.g, ref.mColorDiffuse.b};
-            light.SpecularColor = {ref.mColorSpecular.r, ref.mColorSpecular.g, ref.mColorSpecular.b};
-            light.AmbientColor = {ref.mColorAmbient.r, ref.mColorAmbient.g, ref.mColorAmbient.b};
+            light.m_Parameter.DiffuseColor = {ref.mColorDiffuse.r, ref.mColorDiffuse.g, ref.mColorDiffuse.b};
+            light.m_Parameter.SpecularColor = {ref.mColorSpecular.r, ref.mColorSpecular.g, ref.mColorSpecular.b};
+            light.m_Parameter.AmbientColor = {ref.mColorAmbient.r, ref.mColorAmbient.g, ref.mColorAmbient.b};
 
-            light.AngleInnerCone = ref.mAngleInnerCone;
-            light.AngleOuterCone = ref.mAngleOuterCone;
+            light.m_Parameter.AngleInnerCone = ref.mAngleInnerCone;
+            light.m_Parameter.AngleOuterCone = ref.mAngleOuterCone;
 
-            light.Size = {ref.mSize.x, ref.mSize.y};
+            light.m_Parameter.Size = {ref.mSize.x, ref.mSize.y};
 
             scene->m_Lights.push_back(light);
         }
@@ -255,7 +255,7 @@ namespace VKT {
             // Link the light and the node
             Light &light = scene->m_Lights[m_LightIndexDict[node->m_Name]];
 
-            light.Node = node;
+            light.m_Node = node;
             node->m_Light = &light;
         }
 

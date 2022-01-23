@@ -13,6 +13,7 @@ private: \
 
 namespace VKT::Vulkan
 {
+    // Fixme: Check should be a macro, not a function
     void Check(VkResult result);
     const char* ToString(VkResult result);
 }

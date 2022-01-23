@@ -14,7 +14,7 @@ namespace VKT {
     public:
         void OnAttach()
         {
-            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/nanosuit/nanosuit.obj"));
+            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/lights/directionlight.gltf"));
 
             // Manually set debug info
             {
@@ -32,13 +32,14 @@ namespace VKT {
 
             // Reset Camera
             m_EditorCamera.SetViewportSize(g_App->GetWindow().GetWidth(), g_App->GetWindow().GetHeight());
+            m_EditorCamera.SetDistance(50.0f);
         }
 
         void OnUpdate()
         {
             m_EditorCamera.OnUpdate();
 
-            g_GraphicsManager->SetPerFrame(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
+            g_GraphicsManager->SetViewProj(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
 
             static bool prevReleased = true;
 

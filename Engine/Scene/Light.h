@@ -2,7 +2,7 @@
 
 namespace VKT {
 
-    enum class LightType
+    enum LightType : int
     {
         Undefined = 0, Directional, Point, Spot, Ambient, Area,
     };
@@ -12,28 +12,32 @@ namespace VKT {
     class Light
     {
     public:
-        SceneNode *Node = nullptr;
+        SceneNode *m_Node = nullptr;
 
-        bool IsCastShadow = true;
+        bool m_IsCastShadow = true;
 
-        LightType Type = LightType::Undefined;
+        struct Parameter
+        {
+            alignas(4) LightType Type = LightType::Undefined;
 
-        glm::vec3 Position = {0.0f, 0.0f, 0.0f};
-        glm::vec3 Direction = {0.0f, 0.0f, 0.0f};
-        glm::vec3 Up = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 Position = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 Direction = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 Up = {0.0f, 0.0f, 0.0f};
 
-        float AttenConstant = 0.0f;
-        float AttenLinear = 0.0f;
-        float AttenQuadratic = 1.0f;
+            alignas(4) float AttenConstant = 0.0f;
+            alignas(4) float AttenLinear = 0.0f;
+            alignas(4) float AttenQuadratic = 1.0f;
 
-        glm::vec3 DiffuseColor = {0.0f, 0.0f, 0.0f};
-        glm::vec3 SpecularColor = {0.0f, 0.0f, 0.0f};
-        glm::vec3 AmbientColor = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 DiffuseColor = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 SpecularColor = {0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 AmbientColor = {0.0f, 0.0f, 0.0f};
 
-        float AngleInnerCone = 0.0f;
-        float AngleOuterCone = 0.0f;
+            alignas(4) float AngleInnerCone = 0.0f;
+            alignas(4) float AngleOuterCone = 0.0f;
 
-        glm::vec2 Size = {0.0f, 0.0f};
+            alignas(8) glm::vec2 Size = {0.0f, 0.0f};
+
+        } m_Parameter;
 
     };
 }

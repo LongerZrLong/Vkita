@@ -63,7 +63,7 @@ namespace VKT {
 
         void OnUpdate()
         {
-            g_GraphicsManager->SetPerFrame(View, Proj);
+            g_GraphicsManager->SetViewProj(View, Proj);
 
             static bool prevReleased = true;
 
