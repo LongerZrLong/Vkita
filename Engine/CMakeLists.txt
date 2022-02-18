@@ -67,10 +67,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC stb_image)
 add_subdirectory(External/assimp)
 target_link_libraries(${PROJECT_NAME} PUBLIC assimp)
 
-# ktx
-add_subdirectory(External/ktx)
-target_link_libraries(${PROJECT_NAME} PUBLIC ktx)
-
 # bullet3
 add_subdirectory(External/bullet3)
 target_link_libraries(${PROJECT_NAME} PUBLIC BulletInverseDynamics BulletSoftBody BulletCollision BulletDynamics LinearMath Bullet3Common)

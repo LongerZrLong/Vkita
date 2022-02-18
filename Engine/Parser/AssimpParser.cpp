@@ -285,7 +285,7 @@ namespace VKT {
         light.m_Parameter.Type = Directional;
 
         light.m_Parameter.Position = {0, 0, 0};
-        light.m_Parameter.Direction = {0, -1, 0};
+        light.m_Parameter.Direction = {0, -1, -1};
         light.m_Parameter.Up = {0, 0, 0};
 
         light.m_Parameter.DiffuseColor = {1, 1, 1};

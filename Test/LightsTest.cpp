@@ -14,7 +14,7 @@ namespace VKT {
     public:
         void OnAttach()
         {
-            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/nanosuit_obj/nanosuit.obj"));
+            g_SceneManager->LoadScene(g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Scenes/lights/lights.gltf"));
 
             // Manually set debug info
             {
