@@ -11,6 +11,7 @@
 
 namespace VKT {
 
+    // TODO: Refactor Material system: each material should be corresponding to one graphics pipeline
     class Material
     {
     public:

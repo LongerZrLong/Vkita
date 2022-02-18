@@ -24,6 +24,8 @@ namespace VKT {
         void ProcessLights(Scene*);
         void ProcessNode(aiNode*, Scene*, SceneNode*);
 
+        void DefaultLight(Scene*);
+
     private:
         const aiScene *m_AiScene = nullptr;
 

@@ -5,6 +5,7 @@
 
 #include "Core/Base.h"
 
+// TODO: Change GetVkHandle to type conversion operator
 #define VULKAN_HANDLE(VulkanHandleType, name) \
 public: \
 	const VulkanHandleType &GetVkHandle() const { return name; } \
@@ -13,7 +14,6 @@ private: \
 
 namespace VKT::Vulkan
 {
-    // Fixme: Check should be a macro, not a function
     void Check(VkResult result);
     const char* ToString(VkResult result);
 }

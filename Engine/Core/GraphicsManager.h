@@ -24,6 +24,8 @@
 
 #include "Scene/SceneNode.h"
 
+#define MAX_LIGHTS 10
+
 namespace VKT {
 
     class GraphicsManager : public IRuntimeModule
@@ -83,24 +85,26 @@ namespace VKT {
         Ref<Rendering::VertexBuffer> m_VertexBuffer;
         Ref<Rendering::IndexBuffer> m_IndexBuffer;
 
-        // TODO: Light descriptor set layout should be within per frame descriptor set layout
         Scope<Vulkan::DescriptorSetLayout> m_PerFrameDescSetLayout;
-        Scope<Vulkan::DescriptorSetLayout> m_LightDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_PerBatchDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_MaterialDescSetLayout;
 
-        // PerFrame view projection matrices
-        struct
+        struct PerFrameContext
         {
             struct
             {
                 alignas(16) glm::mat4 View;
                 alignas(16) glm::mat4 Proj;
-            } Values;
+            } ViewProj;
 
-            Scope<Rendering::Buffer> Ubo;
-            Scope<Vulkan::DescriptorSet> DescSet;
-        } m_ViewProj;
+            alignas(4) int NumLights;
+
+            Light::Parameter Lights[MAX_LIGHTS];
+
+        } m_PerFrameContext;
+
+        Scope<Rendering::Buffer> m_PerFrameUbo;
+        Scope<Vulkan::DescriptorSet> m_PerFrameDescSet;
 
         // PerBatch model matrix
         std::unordered_map<SceneNode*, Scope<Rendering::Buffer>> m_RuntimePerBatchUboDict;
@@ -110,10 +114,6 @@ namespace VKT {
         std::vector<Scope<Vulkan::DescriptorSet>> m_MaterialDescSets;
         std::vector<Scope<Rendering::Buffer>> m_MaterialUbos;
         std::unordered_map<std::string, Scope<Rendering::Texture2D>> m_TextureDict;
-
-        // PerFrame Light
-        Scope<Rendering::Buffer> m_LightUbo;
-        Scope<Vulkan::DescriptorSet> m_LightDescSet;
 
         // Debug Info
         struct DebugPrimitive

@@ -25,7 +25,7 @@ namespace VKT {
         std::vector<Material>                               m_Materials;
         std::vector<Light>                                  m_Lights;
 
-        std::list<SceneNode>                                m_SceneNodes;   // Usually this is one dummy root node
+        std::vector<SceneNode>                                m_SceneNodes;   // Usually this is one dummy root node
 
         std::vector<Rendering::Vertex>                      m_Vertices;
         std::vector<uint32_t>                               m_Indices;

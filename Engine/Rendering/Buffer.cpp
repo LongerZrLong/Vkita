@@ -32,6 +32,13 @@ namespace VKT::Rendering {
         m_DeviceMemory->Unmap();
     }
 
+    void Buffer::Update(void *data, size_t offset, size_t size)
+    {
+        const auto ptr = m_DeviceMemory->Map(offset, size);
+        std::memcpy(ptr, data, size);
+        m_DeviceMemory->Unmap();
+    }
+
     bool Buffer::Flush(size_t size, size_t offset)
     {
         VkMappedMemoryRange mappedRange = {};

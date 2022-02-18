@@ -1,14 +1,22 @@
 #version 450
 
-layout (set = 0, binding = 0) uniform Camera
+// MAX_LIGHTS in GraphicsManager.h
+#define MAX_LIGHTS 10
+
+struct Camera
 {
     mat4 View;
     mat4 Proj;
-} camera;
+};
+
+layout (set = 0, binding = 0) uniform PerFrame
+{
+    Camera u_Camera;
+} perFrame;
 
 layout (set = 1, binding = 0) uniform PerBatch
 {
-    mat4 Model;
+    mat4 u_Model;
 } perBatch;
 
 layout (location = 0) in vec3 a_Position;
@@ -23,9 +31,9 @@ layout (location = 2) out vec3 v_Normal;
 
 void main()
 {
-    gl_Position = camera.Proj * camera.View * perBatch.Model * vec4(a_Position, 1.0);
+    gl_Position = perFrame.u_Camera.Proj * perFrame.u_Camera.View * perBatch.u_Model * vec4(a_Position, 1.0);
 
-    v_WorldPos = vec3(perBatch.Model * vec4(a_Position, 1.0));
+    v_WorldPos = vec3(perBatch.u_Model * vec4(a_Position, 1.0));
     v_TexCoord = a_TexCoord;
-    v_Normal = a_Normal;
+    v_Normal = vec3(transpose(inverse(perBatch.u_Model)) * vec4(a_Normal, 1.0));
 }

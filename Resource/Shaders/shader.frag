@@ -1,30 +1,17 @@
 #version 450
 
-// Camera
-layout (set = 0, binding = 0) uniform Camera
+// Refer to MAX_LIGHTS in GraphicsManager.h
+#define MAX_LIGHTS 10
+
+#define AMBIENT_FACTOR 0.1
+
+struct Camera
 {
     mat4 View;
     mat4 Proj;
-} camera;
+};
 
-// Model
-layout (set = 1, binding = 0) uniform PerBatch
-{
-    mat4 Model;
-} perBatch;
-
-// Material
-layout (set = 2, binding = 0) uniform MatPara
-{
-    vec4 DiffColor;
-    vec4 SpecColor;
-    float Shininess;
-} matPara;
-
-layout (set = 2, binding = 1) uniform sampler2D diffSampler;
-layout (set = 2, binding = 2) uniform sampler2D specSampler;
-
-// Light
+// Refer to Light.h: Light::Parameter
 struct Light
 {
     int Type;
@@ -47,10 +34,29 @@ struct Light
     vec2 Size;
 };
 
-layout (set = 3, binding = 0) uniform LightBlock
+// Refer to GraphicsManager.h: PerFrameContext
+layout (set = 0, binding = 0) uniform PerFrame
 {
-    Light light;
-} lightBlock;
+    Camera u_Camera;
+    int u_NumLights;
+    Light u_Lights[MAX_LIGHTS];
+} perFrame;
+
+layout (set = 1, binding = 0) uniform PerBatch
+{
+    mat4 u_Model;
+} perBatch;
+
+// Material
+layout (set = 2, binding = 0) uniform MatPara
+{
+    vec4 DiffColor;
+    vec4 SpecColor;
+    float Shininess;
+} matPara;
+
+layout (set = 2, binding = 1) uniform sampler2D diffSampler;
+layout (set = 2, binding = 2) uniform sampler2D specSampler;
 
 layout (location = 0) in vec3 v_WorldPos;
 layout (location = 1) in vec2 v_TexCoord;
@@ -66,29 +72,32 @@ void main()
 {
     vec3 norm = normalize(v_Normal);
 
-    vec3 camWorldPos = vec3(inverse(camera.View) * vec4(0.0, 0.0, 0.0, 1.0));
+    vec3 camWorldPos = vec3(inverse(perFrame.u_Camera.View) * vec4(0.0, 0.0, 0.0, 1.0));
     vec3 viewDir = normalize(camWorldPos - v_WorldPos);
 
     vec3 result = vec3(0.0);
 
-    switch (lightBlock.light.Type)
+    for (int i = 0; i < perFrame.u_NumLights; i++)
     {
-        case 1:     // Directional lgiht
+        switch (perFrame.u_Lights[i].Type)
         {
-            result += CalcDirLight(lightBlock.light, norm, viewDir);
-            break;
-        }
+            case 1:     // Directional lgiht
+            {
+                result += CalcDirLight(perFrame.u_Lights[i], norm, viewDir);
+                break;
+            }
 
-        case 2:     // Point light
-        {
-            result += CalcPointLight(lightBlock.light, norm, v_WorldPos, viewDir);
-            break;
-        }
+            case 2:     // Point light
+            {
+                result += CalcPointLight(perFrame.u_Lights[i], norm, v_WorldPos, viewDir);
+                break;
+            }
 
-        case 3:     // Spot light
-        {
-            result += CalcSpotLight(lightBlock.light, norm, v_WorldPos, viewDir);
-            break;
+            case 3:     // Spot light
+            {
+                result += CalcSpotLight(perFrame.u_Lights[i], norm, v_WorldPos, viewDir);
+                break;
+            }
         }
     }
 
@@ -111,9 +120,9 @@ vec3 CalcDirLight(Light light, vec3 normal, vec3 viewDir)
     vec3 diffColor = vec3(texture(diffSampler, v_TexCoord) * matPara.DiffColor);
     vec3 specColor = vec3(texture(specSampler, v_TexCoord) * matPara.SpecColor);
 
+    vec3 ambient = AMBIENT_FACTOR * light.AmbientColor * diffColor;
     vec3 diffuse = light.DiffuseColor * diff * diffColor;
     vec3 specular = light.SpecularColor * spec * specColor;
-    vec3 ambient = light.AmbientColor * diffColor;
 
     return (ambient + diffuse + specular);
 }
@@ -142,7 +151,7 @@ vec3 CalcPointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir)
     vec3 specular = light.SpecularColor * spec * specColor;
     vec3 ambient = light.AmbientColor * diffColor;
 
-    ambient *= attenuation;
+    ambient *= AMBIENT_FACTOR * attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
 
@@ -178,7 +187,7 @@ vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir)
     vec3 specular = light.SpecularColor * spec * specColor;
     vec3 ambient = light.AmbientColor * diffColor;
 
-    ambient *= attenuation * intensity;
+    ambient *= AMBIENT_FACTOR * attenuation * intensity;
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
 

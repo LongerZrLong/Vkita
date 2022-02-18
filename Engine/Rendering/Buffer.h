@@ -19,6 +19,7 @@ namespace VKT::Rendering {
         ~Buffer() = default;
 
         void Update(void *data);
+        void Update(void *data, size_t offset, size_t size);
 
         bool Flush(size_t size, size_t offset);
         bool Invalidate(size_t size, size_t offset);

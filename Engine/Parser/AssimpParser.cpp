@@ -44,6 +44,12 @@ namespace VKT {
         ProcessLights(scene.get());
 
         ProcessNode(m_AiScene->mRootNode, scene.get(), nullptr);
+
+        // If the scene doesn't contain any light, add a default light
+        if (scene.get()->m_Lights.empty())
+        {
+            DefaultLight(scene.get());
+        }
     }
 
     void AssimpParser::ProcessMaterials(Scene *scene)
@@ -264,6 +270,39 @@ namespace VKT {
         {
             ProcessNode(pNode->mChildren[i], scene, node);
         }
+    }
+
+    void AssimpParser::DefaultLight(Scene *scene)
+    {
+        SceneNode &root = scene->m_SceneNodes.front();
+
+        // Add a light
+        Light light;
+
+        light.m_Node = nullptr;
+        light.m_IsCastShadow = true;
+
+        light.m_Parameter.Type = Directional;
+
+        light.m_Parameter.Position = {0, 0, 0};
+        light.m_Parameter.Direction = {0, -1, 0};
+        light.m_Parameter.Up = {0, 0, 0};
+
+        light.m_Parameter.DiffuseColor = {1, 1, 1};
+        light.m_Parameter.SpecularColor = {1, 1, 1};
+        light.m_Parameter.AmbientColor = {1, 1, 1};
+
+        scene->m_Lights.push_back(light);
+
+        // Add a light node
+        SceneNode &node = root.m_Children.emplace_back(SceneNode());
+
+        node.m_Name = "_default_light";
+        node.m_Parent = nullptr;
+        node.m_Transform.SetMatrix4x4(glm::mat4(1.0f));
+
+        // bookkeeping
+        m_LightIndexDict[node.m_Name.c_str()] = 0;
     }
 
 }

@@ -8,7 +8,6 @@ namespace VKT::Vulkan {
     {
         if (result != VK_SUCCESS)
         {
-//            std::cerr << "Fatal : VkResult is \"" << ToString(result) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n";
             std::cerr << "Fatal : VkResult is \"" << ToString(result) << "\n";
             assert(result == VK_SUCCESS);
         }
