@@ -32,7 +32,7 @@ namespace VKT::Vulkan {
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
 
-        Check(vkCreateImage(device.GetVkHandle(), &imageInfo, nullptr, &m_VkImage));
+        Check(vkCreateImage(device, &imageInfo, nullptr, &m_VkImage));
     }
 
     Image::Image(Image &&other) noexcept
@@ -49,7 +49,7 @@ namespace VKT::Vulkan {
     {
         if (m_VkImage != nullptr)
         {
-            vkDestroyImage(m_Device.GetVkHandle(), m_VkImage, nullptr);
+            vkDestroyImage(m_Device, m_VkImage, nullptr);
             m_VkImage = nullptr;
         }
     }
@@ -59,7 +59,7 @@ namespace VKT::Vulkan {
         const auto requirements = GetVkMemoryRequirements();
         DeviceMemory memory(m_Device, requirements.size, requirements.memoryTypeBits, 0, propertyFlags);
 
-        Check(vkBindImageMemory(m_Device.GetVkHandle(), m_VkImage, memory.GetVkHandle(), 0));
+        Check(vkBindImageMemory(m_Device, m_VkImage, memory, 0));
 
         return memory;
     }
@@ -67,7 +67,7 @@ namespace VKT::Vulkan {
     VkMemoryRequirements Image::GetVkMemoryRequirements() const
     {
         VkMemoryRequirements requirements;
-        vkGetImageMemoryRequirements(m_Device.GetVkHandle(), m_VkImage, &requirements);
+        vkGetImageMemoryRequirements(m_Device, m_VkImage, &requirements);
         return requirements;
     }
 
@@ -154,7 +154,7 @@ namespace VKT::Vulkan {
             region.imageOffset = { 0, 0, 0 };
             region.imageExtent = { m_VkExtent2D.width, m_VkExtent2D.height, 1 };
 
-            vkCmdCopyBufferToImage(commandBuffer, buffer.GetVkHandle(), m_VkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+            vkCmdCopyBufferToImage(commandBuffer, buffer, m_VkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         });
     }
 

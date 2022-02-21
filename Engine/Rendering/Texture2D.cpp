@@ -52,7 +52,7 @@ namespace VKT::Rendering {
         // Create the device side image, memory, view and sampler.
         m_Image = CreateScope<VKT::Vulkan::Image>(device, VkExtent2D{ m_Width, m_Height }, VK_FORMAT_R8G8B8A8_UNORM);
         m_DeviceMemory = CreateScope<VKT::Vulkan::DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        m_ImageView = CreateScope<VKT::Vulkan::ImageView>(device, m_Image->GetVkHandle(), m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
+        m_ImageView = CreateScope<VKT::Vulkan::ImageView>(device, *m_Image, m_Image->GetVkFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
 
         VkSamplerCreateInfo samplerInfo = {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -75,8 +75,8 @@ namespace VKT::Rendering {
         m_Sampler = CreateScope<VKT::Vulkan::Sampler>(device, &samplerInfo);
 
         m_Descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        m_Descriptor.imageView = m_ImageView->GetVkHandle();
-        m_Descriptor.sampler = m_Sampler->GetVkHandle();
+        m_Descriptor.imageView = *m_ImageView;
+        m_Descriptor.sampler = *m_Sampler;
     }
 
     Texture2D::~Texture2D()

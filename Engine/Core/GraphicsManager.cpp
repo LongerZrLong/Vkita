@@ -87,7 +87,7 @@ namespace VKT {
 
     bool GraphicsManager::BeginFrame()
     {
-        vkWaitForFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(*m_Ctx->device, 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
         VkResult result = m_Ctx->swapChain->AcquireNextImage(m_Ctx->imageAvailableSemaphores[m_Ctx->currentFrame], &imageIndex);
@@ -107,7 +107,7 @@ namespace VKT {
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
         if (m_Ctx->imagesInFlight[imageIndex] != nullptr)
         {
-            vkWaitForFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            vkWaitForFences(*m_Ctx->device, 1, &m_Ctx->imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
         }
         // Mark the image as now being in use by this frame
         m_Ctx->imagesInFlight[imageIndex] = m_Ctx->inFlightFences[m_Ctx->currentFrame];
@@ -136,7 +136,7 @@ namespace VKT {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkResetFences(m_Ctx->device->GetVkHandle(), 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame]);
+        vkResetFences(*m_Ctx->device, 1, &m_Ctx->inFlightFences[m_Ctx->currentFrame]);
 
         if (vkQueueSubmit(m_Ctx->device->GetGraphicsQueue(), 1, &submitInfo, m_Ctx->inFlightFences[m_Ctx->currentFrame]) != VK_SUCCESS)
         {
@@ -167,8 +167,8 @@ namespace VKT {
     {
         auto &scene = g_SceneManager->GetScene();
 
-        m_VertexBuffer = CreateRef<Rendering::VertexBuffer>(scene.m_Vertices);
-        m_IndexBuffer = CreateRef<Rendering::IndexBuffer>(scene.m_Indices);
+        m_VertexBuffer = CreateScope<Rendering::VertexBuffer>(scene.m_Vertices);
+        m_IndexBuffer = CreateScope<Rendering::IndexBuffer>(scene.m_Indices);
 
         // PerFrameUbo has PerFrameContext
         m_PerFrameUbo = CreateScope<Rendering::Buffer>(
@@ -218,7 +218,7 @@ namespace VKT {
         // One descriptor set for each material
         const uint32_t maxSetCount = 1 + m_RuntimePerBatchUboDict.size() + scene.m_Materials.size();
         VkDescriptorPoolCreateInfo descriptorPoolInfo = Vulkan::Initializers::descriptorPoolCreateInfo(poolSizes, maxSetCount);
-        m_DescriptorPool = CreateRef<Vulkan::DescriptorPool>(*m_Ctx->device, &descriptorPoolInfo);
+        m_DescriptorPool = CreateScope<Vulkan::DescriptorPool>(*m_Ctx->device, &descriptorPoolInfo);
 
 
         // ================================ descriptor set layout ================================
@@ -254,9 +254,11 @@ namespace VKT {
 
 
         // ================================ descriptor set ================================
+        VkDescriptorSetLayout stagingDescSetLayout;
 
         // Descriptor Set for perFrame context data
-        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_PerFrameDescSetLayout->GetVkHandle(), 1);
+        stagingDescSetLayout = *m_PerFrameDescSetLayout;
+        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(*m_DescriptorPool, &stagingDescSetLayout, 1);
         m_PerFrameDescSet = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
 
         // Descriptor Set for each scene node model matrix
@@ -269,7 +271,8 @@ namespace VKT {
         m_MaterialDescSets.resize(scene.m_Materials.size());
         for (size_t i = 0; i < scene.m_Materials.size(); i++)
         {
-            allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_MaterialDescSetLayout->GetVkHandle(), 1);
+            stagingDescSetLayout = *m_MaterialDescSetLayout;
+            allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(*m_DescriptorPool, &stagingDescSetLayout, 1);
             m_MaterialDescSets[i] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
         }
 
@@ -319,18 +322,18 @@ namespace VKT {
 
     void GraphicsManager::PreparePipeline()
     {
-        m_VertShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
-        m_FragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
+        m_VertShader = CreateScope<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.vert.spv"));
+        m_FragShader = CreateScope<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/shader.frag.spv"));
 
         // Pipeline layout
         std::array<VkDescriptorSetLayout, 3> setLayouts =
             {
-                m_PerFrameDescSetLayout->GetVkHandle(),
-                m_PerBatchDescSetLayout->GetVkHandle(),
-                m_MaterialDescSetLayout->GetVkHandle(),
+                *m_PerFrameDescSetLayout,
+                *m_PerBatchDescSetLayout,
+                *m_MaterialDescSetLayout,
             };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
-        m_PipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
+        m_PipelineLayout = CreateScope<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
 
         // Create Graphics Pipeline
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
@@ -354,7 +357,7 @@ namespace VKT {
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertexInputBindings, vertexInputAttributes);
 
-        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_PipelineLayout->GetVkHandle(), m_Ctx->renderPass->GetVkHandle(), 0);
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(*m_PipelineLayout, *m_Ctx->renderPass, 0);
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pRasterizationState = &rasterizationStateCI;
@@ -366,7 +369,7 @@ namespace VKT {
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.pDynamicState = &dynamicStateCI;
 
-        m_GraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
+        m_GraphicsPipeline = CreateScope<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
     }
 
     void GraphicsManager::BuildCommandBuffers()
@@ -376,7 +379,7 @@ namespace VKT {
         clearValues[1].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassBeginInfo = Vulkan::Initializers::renderPassBeginInfo();
-        renderPassBeginInfo.renderPass = m_Ctx->renderPass->GetVkHandle();
+        renderPassBeginInfo.renderPass = *m_Ctx->renderPass;
         renderPassBeginInfo.renderArea.offset = {0, 0};
         renderPassBeginInfo.renderArea.extent = m_Ctx->swapChain->GetVkExtent2D();
         renderPassBeginInfo.clearValueCount = 2;
@@ -389,23 +392,25 @@ namespace VKT {
 
         for (size_t i = 0; i < m_Ctx->cmdBuffers->GetSize(); i++)
         {
-            renderPassBeginInfo.framebuffer = m_Ctx->frameBuffers[i]->GetVkHandle();
+            renderPassBeginInfo.framebuffer = m_Ctx->frameBuffers[i];
 
             VkCommandBuffer vkCommandBuffer = m_Ctx->cmdBuffers->Begin(i);
             vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
 
+            VkBuffer buffers[1] = { m_VertexBuffer->GetBuffer() };
             VkDeviceSize offsets[1] = { 0 };
 
-            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_VertexBuffer->GetBuffer().GetVkHandle(), offsets);
-            vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline->GetVkHandle());
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, buffers, offsets);
+            vkCmdBindIndexBuffer(vkCommandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_GraphicsPipeline);
 
             // Bind descriptor set for perFrame context data
+            VkDescriptorSet descriptorSets[1] = { *m_PerFrameDescSet };
             vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_PipelineLayout->GetVkHandle(), 0, 1,
-                                    &m_PerFrameDescSet->GetVkHandle(), 0, nullptr);
+                                    *m_PipelineLayout, 0, 1,
+                                    descriptorSets, 0, nullptr);
 
             for (auto &node : scene.m_SceneNodes)
                 DrawNode(vkCommandBuffer, node);
@@ -414,10 +419,15 @@ namespace VKT {
             if (!m_DebugPrimitivesDict.empty() && g_DebugManager->IsDrawDebugInfo())
             {
                 // Use DebugGraphicsPipeline to draw debug info
-                vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, &m_DebugVertBuffer->GetBuffer().GetVkHandle(), offsets);
-                vkCmdBindIndexBuffer(vkCommandBuffer, m_DebugIndexBuffer->GetBuffer().GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
-                vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugGraphicsPipeline->GetVkHandle());
-                vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_DebugPipelineLayout->GetVkHandle(), 0, 1, &m_PerFrameDescSet->GetVkHandle(), 0, nullptr);
+                VkBuffer buffers[1] = { m_DebugVertBuffer->GetBuffer() };
+                VkDeviceSize offsets[1] = { 0 };
+
+                VkDescriptorSet descriptorSets[1] = { *m_PerFrameDescSet };
+
+                vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, buffers, offsets);
+                vkCmdBindIndexBuffer(vkCommandBuffer, m_DebugIndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_DebugGraphicsPipeline);
+                vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_DebugPipelineLayout, 0, 1, descriptorSets, 0, nullptr);
 
                 for (auto &node : scene.m_SceneNodes)
                     DrawNodeDebugInfo(vkCommandBuffer, node);
@@ -433,19 +443,21 @@ namespace VKT {
     {
         if (!node.m_Mesh.m_Primitives.empty())
         {
+            VkDescriptorSet descriptorSets[1] = { *m_RuntimePerBatchDescSetDict[&node] };
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_PipelineLayout->GetVkHandle(), 1, 1,
-                                    &m_RuntimePerBatchDescSetDict[&node]->GetVkHandle(), 0, nullptr);
+                                    *m_PipelineLayout, 1, 1,
+                                    descriptorSets, 0, nullptr);
 
             for (auto &primitive : node.m_Mesh.m_Primitives)
             {
                 if (primitive.IndexCount > 0)
                 {
+                    VkDescriptorSet descriptorSets[1] = { *m_MaterialDescSets[primitive.MaterialIndex] };
                     vkCmdBindDescriptorSets(vkCommandBuffer,
                                             VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            m_PipelineLayout->GetVkHandle(), 2, 1,
-                                            &m_MaterialDescSets[primitive.MaterialIndex]->GetVkHandle(), 0, nullptr);
+                                            *m_PipelineLayout, 2, 1,
+                                            descriptorSets, 0, nullptr);
                     vkCmdDrawIndexed(vkCommandBuffer, primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
                 }
             }
@@ -472,7 +484,8 @@ namespace VKT {
 
     void GraphicsManager::SetupRuntimePerBatchDescSetDict(SceneNode &node)
     {
-        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(m_DescriptorPool->GetVkHandle(), &m_PerBatchDescSetLayout->GetVkHandle(), 1);
+        VkDescriptorSetLayout descSetLayouts[1] = { *m_PerBatchDescSetLayout };
+        auto allocInfo = Vulkan::Initializers::descriptorSetAllocateInfo(*m_DescriptorPool, descSetLayouts, 1);
         m_RuntimePerBatchDescSetDict[&node] = CreateScope<Vulkan::DescriptorSet>(*m_Ctx->device, &allocInfo);
 
         for (auto &child : node.m_Children)
@@ -607,7 +620,7 @@ namespace VKT {
         if (m_DebugPrimitivesDict.empty()) return;
 
         // Create Vertex Buffer for Debug Info
-        m_DebugVertBuffer = CreateRef<Rendering::Buffer>(sizeof(debugVertices[0]) * debugVertices.size(),
+        m_DebugVertBuffer = CreateScope<Rendering::Buffer>(sizeof(debugVertices[0]) * debugVertices.size(),
                                                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -618,7 +631,7 @@ namespace VKT {
                                                   debugVertices.data());
 
         // Create Index Buffer for Debug Info
-        m_DebugIndexBuffer = CreateRef<Rendering::Buffer>(sizeof(debugIndices[0]) * debugIndices.size(),
+        m_DebugIndexBuffer = CreateScope<Rendering::Buffer>(sizeof(debugIndices[0]) * debugIndices.size(),
                                                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -631,17 +644,17 @@ namespace VKT {
 
     void GraphicsManager::PrepareDebugPipeline()
     {
-        m_DebugVertShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.vert.spv"));
-        m_DebugFragShader = CreateRef<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.frag.spv"));
+        m_DebugVertShader = CreateScope<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.vert.spv"));
+        m_DebugFragShader = CreateScope<Vulkan::ShaderModule>(*m_Ctx->device, g_FileSystem->Append(g_FileSystem->GetRoot(), "Resource/Shaders/debug.frag.spv"));
 
         // Pipeline layout
         std::array<VkDescriptorSetLayout, 2> setLayouts =
             {
-                m_PerFrameDescSetLayout->GetVkHandle(),
-                m_PerBatchDescSetLayout->GetVkHandle(),
+                *m_PerFrameDescSetLayout,
+                *m_PerBatchDescSetLayout,
             };
         VkPipelineLayoutCreateInfo pipelineLayoutCI = Vulkan::Initializers::pipelineLayoutCreateInfo(setLayouts.data(), static_cast<uint32_t>(setLayouts.size()));
-        m_DebugPipelineLayout = CreateRef<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
+        m_DebugPipelineLayout = CreateScope<Vulkan::PipelineLayout>(*m_Ctx->device, &pipelineLayoutCI);
 
         // Create Graphics Pipeline
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Vulkan::Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_LINE_LIST, 0, VK_FALSE);
@@ -673,7 +686,7 @@ namespace VKT {
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Vulkan::Initializers::pipelineVertexInputStateCreateInfo(vertInputBindings, vertInputAttribs);
 
-        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(m_DebugPipelineLayout->GetVkHandle(), m_Ctx->renderPass->GetVkHandle(), 0);
+        VkGraphicsPipelineCreateInfo pipelineCI = Vulkan::Initializers::pipelineCreateInfo(*m_DebugPipelineLayout, *m_Ctx->renderPass, 0);
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pRasterizationState = &rasterizationStateCI;
@@ -685,18 +698,19 @@ namespace VKT {
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.pDynamicState = &dynamicStateCI;
 
-        m_DebugGraphicsPipeline = CreateRef<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
+        m_DebugGraphicsPipeline = CreateScope<Vulkan::Pipeline>(*m_Ctx->device, &pipelineCI);
     }
 
     void GraphicsManager::DrawNodeDebugInfo(VkCommandBuffer vkCommandBuffer, SceneNode &node)
     {
         if (m_DebugPrimitivesDict.count(&node) > 0)
         {
+            VkDescriptorSet descriptorSets[1] = { *m_RuntimePerBatchDescSetDict[&node] };
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_DebugPipelineLayout->GetVkHandle(),
+                                    *m_DebugPipelineLayout,
                                     1, 1,
-                                    &m_RuntimePerBatchDescSetDict[&node]->GetVkHandle(), 0, nullptr);
+                                    descriptorSets, 0, nullptr);
 
             vkCmdDrawIndexed(vkCommandBuffer, m_DebugPrimitivesDict[&node].IndexCount, 1, m_DebugPrimitivesDict[&node].FirstIndex, 0, 0);
         }

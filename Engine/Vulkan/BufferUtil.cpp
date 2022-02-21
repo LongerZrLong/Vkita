@@ -46,8 +46,8 @@ namespace VKT::Vulkan {
         buffer = CreateScope<Buffer>(device, contentSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage);
         memory = CreateScope<DeviceMemory>(buffer->AllocateMemory(allocateFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        debugUtils.SetObjectName(buffer->GetVkHandle(), (name + std::string(" Buffer")).c_str());
-        debugUtils.SetObjectName(memory->GetVkHandle(), (name + std::string(" Memory")).c_str());
+        debugUtils.SetObjectName(*buffer, (name + std::string(" Buffer")).c_str());
+        debugUtils.SetObjectName(*memory, (name + std::string(" Memory")).c_str());
 
         CopyFromStagingBuffer(device, commandPool, *buffer, size, data);
     }

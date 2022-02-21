@@ -45,15 +45,15 @@ namespace VKT::Vulkan {
     {
         m_Image = CreateScope<Image>(device, extent, m_VkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         m_DeviceMemory = CreateScope<DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        m_ImageView = CreateScope<ImageView>(device, m_Image->GetVkHandle(), m_VkFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_ImageView = CreateScope<ImageView>(device, *m_Image, m_VkFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         m_Image->TransitionImageLayout(device, commandPool, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
         const auto &debugUtils = device.GetDebugUtils();
 
-        debugUtils.SetObjectName(m_Image->GetVkHandle(), "Depth Buffer Image");
-        debugUtils.SetObjectName(m_DeviceMemory->GetVkHandle(), "Depth Buffer Image Memory");
-        debugUtils.SetObjectName(m_ImageView->GetVkHandle(), "Depth Buffer ImageView");
+        debugUtils.SetObjectName(*m_Image, "Depth Buffer Image");
+        debugUtils.SetObjectName(*m_DeviceMemory, "Depth Buffer Image Memory");
+        debugUtils.SetObjectName(*m_ImageView, "Depth Buffer ImageView");
     }
 
     DepthBuffer::~DepthBuffer()

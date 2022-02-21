@@ -7,20 +7,20 @@ namespace VKT::Vulkan {
     {
         VkCommandBufferAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool.GetVkHandle();
+        allocInfo.commandPool = commandPool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = count;
 
         m_VkCommandBuffers.resize(count);
 
-        Check(vkAllocateCommandBuffers(m_Device.GetVkHandle(), &allocInfo, m_VkCommandBuffers.data()));
+        Check(vkAllocateCommandBuffers(m_Device, &allocInfo, m_VkCommandBuffers.data()));
     }
 
     CommandBuffers::~CommandBuffers()
     {
         if (!m_VkCommandBuffers.empty())
         {
-            vkFreeCommandBuffers(m_Device.GetVkHandle(), m_CommandPool.GetVkHandle(), static_cast<uint32_t>(m_VkCommandBuffers.size()), m_VkCommandBuffers.data());
+            vkFreeCommandBuffers(m_Device, m_CommandPool, static_cast<uint32_t>(m_VkCommandBuffers.size()), m_VkCommandBuffers.data());
             m_VkCommandBuffers.clear();
         }
     }

@@ -41,7 +41,7 @@ namespace VKT::Vulkan {
         const void *nextDeviceFeatures) :
         m_VkPhysicalDevice(vkPhysicalDevice),
         m_Surface(surface),
-        m_DebugUtils(surface.GetInstance().GetVkHandle())
+        m_DebugUtils(surface.GetInstance())
     {
         CheckRequiredExtensions(vkPhysicalDevice, requiredExtensions);
 
@@ -57,7 +57,7 @@ namespace VKT::Vulkan {
         {
             VkBool32 presentSupport = false;
             const uint32_t i = static_cast<uint32_t>(&*queueFamilies.cbegin() - &queueFamily);
-            vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, surface.GetVkHandle(), &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, surface, &presentSupport);
             return queueFamily.queueCount > 0 && presentSupport;
         });
 

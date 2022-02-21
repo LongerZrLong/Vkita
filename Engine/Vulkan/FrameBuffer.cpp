@@ -12,20 +12,20 @@ namespace VKT::Vulkan {
     {
         std::array<VkImageView, 2> attachments =
             {
-                imageView.GetVkHandle(),
-                renderPass.GetDepthBuffer().GetImageView().GetVkHandle()
+                imageView,
+                renderPass.GetDepthBuffer().GetImageView()
             };
 
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass.GetVkHandle();
+        framebufferInfo.renderPass = renderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = renderPass.GetSwapChain().GetVkExtent2D().width;
         framebufferInfo.height = renderPass.GetSwapChain().GetVkExtent2D().height;
         framebufferInfo.layers = 1;
 
-        Check(vkCreateFramebuffer(device.GetVkHandle(), &framebufferInfo, nullptr, &m_VkFramebuffer));
+        Check(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_VkFramebuffer));
     }
 
     FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept
@@ -41,7 +41,7 @@ namespace VKT::Vulkan {
     {
         if (m_VkFramebuffer != nullptr)
         {
-            vkDestroyFramebuffer(m_Device.GetVkHandle(), m_VkFramebuffer, nullptr);
+            vkDestroyFramebuffer(m_Device, m_VkFramebuffer, nullptr);
             m_VkFramebuffer = nullptr;
         }
     }

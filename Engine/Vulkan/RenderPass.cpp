@@ -69,14 +69,14 @@ namespace VKT::Vulkan {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        Check(vkCreateRenderPass(m_Device.GetVkHandle(), &renderPassInfo, nullptr, &m_VkRenderPass));
+        Check(vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_VkRenderPass));
     }
 
     RenderPass::~RenderPass()
     {
         if (m_VkRenderPass != nullptr)
         {
-            vkDestroyRenderPass(m_Device.GetVkHandle(), m_VkRenderPass, nullptr);
+            vkDestroyRenderPass(m_Device, m_VkRenderPass, nullptr);
             m_VkRenderPass = nullptr;
         }
     }

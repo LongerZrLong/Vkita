@@ -12,7 +12,7 @@ namespace VKT::Vulkan {
     SwapChain::SwapChain(const Device& device, const VkPresentModeKHR presentMode)
         : m_VkPhysicalDevice(device.GetVkPhysicalDevice()), m_Device(device)
     {
-        const auto details = QuerySwapChainSupport(device.GetVkPhysicalDevice(), device.GetSurface().GetVkHandle());
+        const auto details = QuerySwapChainSupport(device.GetVkPhysicalDevice(), device.GetSurface());
         if (details.Formats.empty() || details.PresentModes.empty())
         {
             throw std::runtime_error("empty swap chain support");
@@ -28,7 +28,7 @@ namespace VKT::Vulkan {
 
         VkSwapchainCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = surface.GetVkHandle();
+        createInfo.surface = surface;
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -56,13 +56,13 @@ namespace VKT::Vulkan {
             createInfo.pQueueFamilyIndices = nullptr; // Optional
         }
 
-        Check(vkCreateSwapchainKHR(device.GetVkHandle(), &createInfo, nullptr, &m_VkSwapchain));
+        Check(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_VkSwapchain));
 
         m_MinImageCount = details.Capabilities.minImageCount;
         m_VkPresentMode = actualPresentMode;
         m_VkFormat = surfaceFormat.format;
         m_VkExtent2D = extent;
-        m_VkImages = GetEnumerateVector(m_Device.GetVkHandle(), m_VkSwapchain, vkGetSwapchainImagesKHR);
+        m_VkImages = GetEnumerateVector(VkDevice(m_Device), m_VkSwapchain, vkGetSwapchainImagesKHR);
         m_ImageViews.reserve(m_VkImages.size());
 
         for (const auto image : m_VkImages)
@@ -75,7 +75,7 @@ namespace VKT::Vulkan {
         for (size_t i = 0; i != m_VkImages.size(); ++i)
         {
             debugUtils.SetObjectName(m_VkImages[i], ("Swapchain Image #" + std::to_string(i)).c_str());
-            debugUtils.SetObjectName(m_ImageViews[i]->GetVkHandle(), ("Swapchain ImageView #" + std::to_string(i)).c_str());
+            debugUtils.SetObjectName(*m_ImageViews[i], ("Swapchain ImageView #" + std::to_string(i)).c_str());
         }
     }
 
@@ -85,14 +85,14 @@ namespace VKT::Vulkan {
 
         if (m_VkSwapchain != nullptr)
         {
-            vkDestroySwapchainKHR(m_Device.GetVkHandle(), m_VkSwapchain, nullptr);
+            vkDestroySwapchainKHR(m_Device, m_VkSwapchain, nullptr);
             m_VkSwapchain = nullptr;
         }
     }
 
     VkResult SwapChain::AcquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex)
     {
-        return vkAcquireNextImageKHR(m_Device.GetVkHandle(), m_VkSwapchain, UINT64_MAX, presentCompleteSemaphore, VK_NULL_HANDLE, imageIndex);
+        return vkAcquireNextImageKHR(m_Device, m_VkSwapchain, UINT64_MAX, presentCompleteSemaphore, VK_NULL_HANDLE, imageIndex);
     }
 
     VkResult SwapChain::QueuePresent(VkQueue presentQueue, uint32_t imageIndex, VkSemaphore waitSemaphore)

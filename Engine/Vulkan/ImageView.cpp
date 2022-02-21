@@ -20,14 +20,14 @@ namespace VKT::Vulkan {
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        Check(vkCreateImageView(m_Device.GetVkHandle(), &createInfo, nullptr, &m_VkImageView));
+        Check(vkCreateImageView(m_Device, &createInfo, nullptr, &m_VkImageView));
     }
 
     ImageView::~ImageView()
     {
         if (m_VkImageView != nullptr)
         {
-            vkDestroyImageView(m_Device.GetVkHandle(), m_VkImageView, nullptr);
+            vkDestroyImageView(m_Device, m_VkImageView, nullptr);
             m_VkImageView = nullptr;
         }
     }

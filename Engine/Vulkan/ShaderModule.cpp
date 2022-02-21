@@ -17,14 +17,14 @@ namespace VKT::Vulkan {
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        Check(vkCreateShaderModule(device.GetVkHandle(), &createInfo, nullptr, &m_VkShaderModule));
+        Check(vkCreateShaderModule(device, &createInfo, nullptr, &m_VkShaderModule));
     }
 
     ShaderModule::~ShaderModule()
     {
         if (m_VkShaderModule != nullptr)
         {
-            vkDestroyShaderModule(m_Device.GetVkHandle(), m_VkShaderModule, nullptr);
+            vkDestroyShaderModule(m_Device, m_VkShaderModule, nullptr);
             m_VkShaderModule = nullptr;
         }
     }

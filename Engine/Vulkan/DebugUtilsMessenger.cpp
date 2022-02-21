@@ -170,14 +170,14 @@ namespace VKT::Vulkan {
         createInfo.pfnUserCallback = VulkanDebugCallback;
         createInfo.pUserData = nullptr;
 
-        Check(CreateDebugUtilsMessengerEXT(m_Instance.GetVkHandle(), &createInfo, nullptr, &m_VkDebugUtilsMessenger));
+        Check(CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_VkDebugUtilsMessenger));
     }
 
     DebugUtilsMessenger::~DebugUtilsMessenger()
     {
         if (m_VkDebugUtilsMessenger != nullptr)
         {
-            DestroyDebugUtilsMessengerEXT(m_Instance.GetVkHandle(), m_VkDebugUtilsMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(m_Instance, m_VkDebugUtilsMessenger, nullptr);
             m_VkDebugUtilsMessenger = nullptr;
         }
     }

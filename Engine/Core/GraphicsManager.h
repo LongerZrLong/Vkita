@@ -74,16 +74,16 @@ namespace VKT {
     private:
         Scope<Rendering::Context> m_Ctx;
 
-        Ref<Vulkan::DescriptorPool> m_DescriptorPool;
+        Scope<Vulkan::DescriptorPool> m_DescriptorPool;
 
-        Ref<Vulkan::PipelineLayout> m_PipelineLayout;
-        Ref<Vulkan::Pipeline> m_GraphicsPipeline;
+        Scope<Vulkan::PipelineLayout> m_PipelineLayout;
+        Scope<Vulkan::Pipeline> m_GraphicsPipeline;
 
-        Ref<Vulkan::ShaderModule> m_VertShader;
-        Ref<Vulkan::ShaderModule> m_FragShader;
+        Scope<Vulkan::ShaderModule> m_VertShader;
+        Scope<Vulkan::ShaderModule> m_FragShader;
 
-        Ref<Rendering::VertexBuffer> m_VertexBuffer;
-        Ref<Rendering::IndexBuffer> m_IndexBuffer;
+        Scope<Rendering::VertexBuffer> m_VertexBuffer;
+        Scope<Rendering::IndexBuffer> m_IndexBuffer;
 
         Scope<Vulkan::DescriptorSetLayout> m_PerFrameDescSetLayout;
         Scope<Vulkan::DescriptorSetLayout> m_PerBatchDescSetLayout;
@@ -123,14 +123,14 @@ namespace VKT {
         };
         std::unordered_map<SceneNode*, DebugPrimitive> m_DebugPrimitivesDict;
 
-        Ref<Rendering::Buffer> m_DebugVertBuffer;
-        Ref<Rendering::Buffer> m_DebugIndexBuffer;
+        Scope<Rendering::Buffer> m_DebugVertBuffer;
+        Scope<Rendering::Buffer> m_DebugIndexBuffer;
 
-        Ref<Vulkan::PipelineLayout> m_DebugPipelineLayout;
-        Ref<Vulkan::Pipeline> m_DebugGraphicsPipeline;
+        Scope<Vulkan::PipelineLayout> m_DebugPipelineLayout;
+        Scope<Vulkan::Pipeline> m_DebugGraphicsPipeline;
 
-        Ref<Vulkan::ShaderModule> m_DebugVertShader;
-        Ref<Vulkan::ShaderModule> m_DebugFragShader;
+        Scope<Vulkan::ShaderModule> m_DebugVertShader;
+        Scope<Vulkan::ShaderModule> m_DebugFragShader;
     };
 
     extern GraphicsManager *g_GraphicsManager;

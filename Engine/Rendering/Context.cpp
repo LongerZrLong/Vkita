@@ -119,7 +119,7 @@ namespace VKT::Rendering {
 
         for (const auto &imageView : swapChain->GetImageViews())
         {
-            frameBuffers.emplace_back(CreateScope<Vulkan::FrameBuffer>(*device, *imageView, *renderPass));
+            frameBuffers.emplace_back(*device, *imageView, *renderPass);
         }
 
         cmdBuffers = CreateScope<Vulkan::CommandBuffers>(*device, *cmdPool, frameBuffers.size());
@@ -152,9 +152,9 @@ namespace VKT::Rendering {
 
         for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
         {
-            if (vkCreateSemaphore(device->GetVkHandle(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(device->GetVkHandle(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(device->GetVkHandle(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+            if (vkCreateSemaphore(*device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(*device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(*device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
@@ -165,9 +165,9 @@ namespace VKT::Rendering {
     {
         for (size_t i = 0; i < Config::kMaxInFlightFrameCount; i++)
         {
-            vkDestroySemaphore(device->GetVkHandle(), renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(device->GetVkHandle(), imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(device->GetVkHandle(), inFlightFences[i], nullptr);
+            vkDestroySemaphore(*device, renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(*device, imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(*device, inFlightFences[i], nullptr);
         }
     }
 

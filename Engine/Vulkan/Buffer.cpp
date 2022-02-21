@@ -13,14 +13,14 @@ namespace VKT::Vulkan {
         bufferInfo.usage = usageFlags;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        Check(vkCreateBuffer(device.GetVkHandle(), &bufferInfo, nullptr, &m_VkBuffer));
+        Check(vkCreateBuffer(device, &bufferInfo, nullptr, &m_VkBuffer));
     }
 
     Buffer::~Buffer()
     {
         if (m_VkBuffer != nullptr)
         {
-            vkDestroyBuffer(m_Device.GetVkHandle(), m_VkBuffer, nullptr);
+            vkDestroyBuffer(m_Device, m_VkBuffer, nullptr);
             m_VkBuffer = nullptr;
         }
     }
@@ -35,7 +35,7 @@ namespace VKT::Vulkan {
         const auto requirements = GetVkMemoryRequirements();
         DeviceMemory memory(m_Device, requirements.size, requirements.memoryTypeBits, allocateFlags, propertyFlags);
 
-        Check(vkBindBufferMemory(m_Device.GetVkHandle(), m_VkBuffer, memory.GetVkHandle(), 0));
+        Check(vkBindBufferMemory(m_Device, m_VkBuffer, memory, 0));
 
         return memory;
     }
@@ -43,7 +43,7 @@ namespace VKT::Vulkan {
     VkMemoryRequirements Buffer::GetVkMemoryRequirements() const
     {
         VkMemoryRequirements requirements;
-        vkGetBufferMemoryRequirements(m_Device.GetVkHandle(), m_VkBuffer, &requirements);
+        vkGetBufferMemoryRequirements(m_Device, m_VkBuffer, &requirements);
         return requirements;
     }
 
@@ -52,9 +52,9 @@ namespace VKT::Vulkan {
         VkBufferDeviceAddressInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         info.pNext = nullptr;
-        info.buffer = GetVkHandle();
+        info.buffer = *this;
 
-        return vkGetBufferDeviceAddress(m_Device.GetVkHandle(), &info);
+        return vkGetBufferDeviceAddress(m_Device, &info);
     }
 
     void Buffer::CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size) const
@@ -66,7 +66,7 @@ namespace VKT::Vulkan {
             copyRegion.dstOffset = 0; // Optional
             copyRegion.size = size;
 
-            vkCmdCopyBuffer(commandBuffer, src.GetVkHandle(), GetVkHandle(), 1, &copyRegion);
+            vkCmdCopyBuffer(commandBuffer, src, *this, 1, &copyRegion);
         });
     }
 

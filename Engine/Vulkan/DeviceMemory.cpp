@@ -21,7 +21,7 @@ namespace VKT::Vulkan {
         allocInfo.allocationSize = size;
         allocInfo.memoryTypeIndex = FindMemoryType(memoryTypeBits, propertyFlags);
 
-        Check(vkAllocateMemory(device.GetVkHandle(), &allocInfo, nullptr, &m_VkDeviceMemory));
+        Check(vkAllocateMemory(device, &allocInfo, nullptr, &m_VkDeviceMemory));
     }
 
     DeviceMemory::DeviceMemory(DeviceMemory &&other) noexcept
@@ -34,7 +34,7 @@ namespace VKT::Vulkan {
     {
         if (m_VkDeviceMemory != nullptr)
         {
-            vkFreeMemory(m_Device.GetVkHandle(), m_VkDeviceMemory, nullptr);
+            vkFreeMemory(m_Device, m_VkDeviceMemory, nullptr);
             m_VkDeviceMemory = nullptr;
         }
     }
@@ -42,13 +42,13 @@ namespace VKT::Vulkan {
     void *DeviceMemory::Map(const size_t offset, const size_t size)
     {
         void *data;
-        Check(vkMapMemory(m_Device.GetVkHandle(), m_VkDeviceMemory, offset, size, 0, &data));
+        Check(vkMapMemory(m_Device, m_VkDeviceMemory, offset, size, 0, &data));
         return data;
     }
 
     void DeviceMemory::Unmap()
     {
-        vkUnmapMemory(m_Device.GetVkHandle(), m_VkDeviceMemory);
+        vkUnmapMemory(m_Device, m_VkDeviceMemory);
     }
 
     uint32_t DeviceMemory::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags propertyFlags) const

@@ -59,7 +59,7 @@ namespace VKT::Rendering {
 
         Scope<VKT::Vulkan::SwapChain> swapChain;
 
-        std::vector<Scope<VKT::Vulkan::FrameBuffer>> frameBuffers;
+        std::vector<VKT::Vulkan::FrameBuffer> frameBuffers;
 
         Scope<VKT::Vulkan::RenderPass> renderPass;
         Scope<VKT::Vulkan::DepthBuffer> depthBuffer;
