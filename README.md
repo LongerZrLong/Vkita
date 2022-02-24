@@ -25,3 +25,17 @@ cd Test
 
 #### Linux and Windows
 Although it is only tested on MacOS. The build and run process for Linux and Windows should be similar.
+
+## Features
+
+* **Vulkan C++ wrapper**: 
+  * Wraps Vulkan objects such as Device, SwapChain, Buffer, Image, Descriptor, Pipeline, etc.
+* **Scene system**: 
+  * Support common 3D scene and model file format, e.g. obj, gltf.
+  * Support scene graph data structure.
+* **Material system**: 
+  * Supports Blinn-Phong shading pipeline.
+* **Light system**: 
+  * Supports multiple light sources of different types: directional, point and spot.
+* **Physics system**: 
+  * Supports rigid body dynamics.
