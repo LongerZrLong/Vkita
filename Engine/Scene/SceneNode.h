@@ -21,7 +21,7 @@ namespace VKT {
     public:
         std::string m_Name;
         SceneNode *m_Parent;
-        std::list<SceneNode> m_Children;
+        std::vector<SceneNode> m_Children;
 
         Mesh m_Mesh;
 
