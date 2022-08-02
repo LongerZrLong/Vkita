@@ -39,3 +39,14 @@ Although it is only tested on MacOS. The build and run process for Linux and Win
   * Supports multiple light sources of different types: directional, point and spot.
 * **Physics system**: 
   * Supports rigid body dynamics.
+
+## Screenshots
+
+### Scene Rendering
+<img src="images/scene_loading.png">
+
+### Multiple Light Sources
+<img src="images/multiple_light_sources.png">
+
+### Basic Rigid Body Dynamics
+<img src="images/basic_rigid_body_dynamics.png">
